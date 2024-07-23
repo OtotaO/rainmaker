@@ -8,6 +8,11 @@ import ReactMarkdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
 import Refinement from './components/Refinement';
+import {
+  FinalizedPRD,
+  GitHubIssueCreationRequest,
+  GitHubIssueCreationResponse
+} from '../../shared/src/types';
 
 const PRD_QUESTIONS = [
   { id: "1_SPEC", text: "What's the feature in one sentence?" },
@@ -48,7 +53,7 @@ const App: React.FC = () => {
   const [aiResponses, setAiResponses] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isRefinementStarted, setIsRefinementStarted] = useState(false);
-  const [finalizedPRD, setFinalizedPRD] = useState<any>(null);
+  const [finalizedPRD, setFinalizedPRD] = useState<FinalizedPRD | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -93,9 +98,8 @@ const App: React.FC = () => {
     }
   }
 
-  const handleRefinementComplete = (finalizedPRD: any) => {
+  const handleRefinementComplete = (finalizedPRD: FinalizedPRD) => {
     setFinalizedPRD(finalizedPRD);
-    // Here you would typically call a function to create a GitHub issue
     console.log('Finalized PRD:', finalizedPRD);
   };
 
@@ -108,7 +112,7 @@ const App: React.FC = () => {
   const handleCreateGitHubIssue = async () => {
     if (!finalizedPRD) return;
 
-    const title = `New PRD: ${finalizedPRD.refinedPRD.split('\n')[0]}`; // Use the first line as the title
+    const title = "New PRD: " + finalizedPRD.refinedPRD.split('\n')[0]; // Use the first line as the title
     const body = `
 # PRD: ${title}
 
@@ -127,14 +131,20 @@ ${JSON.stringify(finalizedPRD.acceptanceCriteria, null, 2)}
 ${finalizedPRD.finalNotes}
     `;
 
+    const issueCreationRequest: GitHubIssueCreationRequest = {
+      title,
+      body,
+      labels: ['PRD', 'MVP']
+    };
+
     try {
       const response = await fetch('/api/github/create-issue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body, labels: ['PRD', 'MVP'] })
+        body: JSON.stringify(issueCreationRequest)
       });
 
-      const result = await response.json();
+      const result = await response.json() as GitHubIssueCreationResponse;
 
       if (result.success) {
         alert(`GitHub issue created successfully! URL: ${result.issueUrl}`);

@@ -8,6 +8,12 @@ import { serve } from '@hono/node-server';
 import Anthropic from '@anthropic-ai/sdk';
 import { refinementProcess } from './refinement';
 import { addCommentToIssue, createGitHubIssue } from './github';
+import {
+  GitHubIssueCreationRequest,
+  GitHubIssueCreationResponse,
+  GitHubCommentCreationRequest,
+  GitHubCommentCreationResponse,
+} from '../../shared/src/types';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set, refusing to start server.');
@@ -90,18 +96,18 @@ app.post('/api/refinement/acceptance-criteria', async (c) => {
   return c.json(result);
 });
 
-// New endpoint for GitHub issue creation
+// Update GitHub issue creation endpoint
 app.post('/api/github/create-issue', async (c) => {
-  const { title, body } = await c.req.json();
-  const result = await createGitHubIssue(title, body);
-  return c.json(result);
+  const { title, body, labels } = (await c.req.json()) as GitHubIssueCreationRequest;
+  const result = await createGitHubIssue(title, body, labels);
+  return c.json(result as GitHubIssueCreationResponse);
 });
 
-// New endpoint for adding comments to GitHub issues
+// Update GitHub comment creation endpoint
 app.post('/api/github/add-comment', async (c) => {
-  const { issueNumber, comment } = await c.req.json();
+  const { issueNumber, comment } = (await c.req.json()) as GitHubCommentCreationRequest;
   const result = await addCommentToIssue(issueNumber, comment);
-  return c.json(result);
+  return c.json(result as GitHubCommentCreationResponse);
 });
 
 const port = 3001;
