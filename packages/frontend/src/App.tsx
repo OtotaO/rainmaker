@@ -105,6 +105,49 @@ const App: React.FC = () => {
     setFinalizedPRD(null);
   };
 
+  const handleCreateGitHubIssue = async () => {
+    if (!finalizedPRD) return;
+
+    const title = `New PRD: ${finalizedPRD.refinedPRD.split('\n')[0]}`; // Use the first line as the title
+    const body = `
+# PRD: ${title}
+
+${finalizedPRD.refinedPRD}
+
+## Epics and Tasks
+${JSON.stringify(finalizedPRD.epicsAndTasks, null, 2)}
+
+## MVP Features
+${JSON.stringify(finalizedPRD.mvpFeatures, null, 2)}
+
+## Acceptance Criteria
+${JSON.stringify(finalizedPRD.acceptanceCriteria, null, 2)}
+
+## Final Notes
+${finalizedPRD.finalNotes}
+    `;
+
+    try {
+      const response = await fetch('/api/github/create-issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body, labels: ['PRD', 'MVP'] })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`GitHub issue created successfully! URL: ${result.issueUrl}`);
+      } else {
+        alert(`Failed to create GitHub issue: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error creating GitHub issue:', error);
+      alert('An error occurred while creating the GitHub issue. Please try again.');
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 flex items-center justify-center p-4">
       <motion.div
@@ -262,7 +305,7 @@ const App: React.FC = () => {
             <h3 className="text-2xl font-bold text-gray-800 mb-4">Finalized PRD</h3>
             <p>Your PRD has been finalized and is ready to be created as a GitHub issue.</p>
             <button
-              onClick={() => {/* Implement GitHub issue creation here */ }}
+              onClick={handleCreateGitHubIssue}
               className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition duration-300"
             >
               Create GitHub Issue

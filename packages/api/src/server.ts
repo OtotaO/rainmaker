@@ -7,10 +7,14 @@ import { streamSSE } from 'hono/streaming';
 import { serve } from '@hono/node-server';
 import Anthropic from '@anthropic-ai/sdk';
 import { refinementProcess } from './refinement';
-import { createGitHubIssue } from './github';
+import { addCommentToIssue, createGitHubIssue } from './github';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set, refusing to start server.');
+}
+
+if (!process.env.GITHUB_TOKEN || !process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) {
+  throw new Error('GitHub configuration is incomplete. Please check your .env file.');
 }
 
 const anthropic = new Anthropic({
@@ -90,6 +94,13 @@ app.post('/api/refinement/acceptance-criteria', async (c) => {
 app.post('/api/github/create-issue', async (c) => {
   const { title, body } = await c.req.json();
   const result = await createGitHubIssue(title, body);
+  return c.json(result);
+});
+
+// New endpoint for adding comments to GitHub issues
+app.post('/api/github/add-comment', async (c) => {
+  const { issueNumber, comment } = await c.req.json();
+  const result = await addCommentToIssue(issueNumber, comment);
   return c.json(result);
 });
 
