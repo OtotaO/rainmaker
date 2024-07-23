@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+// File: packages/frontend/src/App.tsx
+
+import type React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckIcon, BrainCircuitIcon, SparklesIcon, ArrowRightIcon } from 'lucide-react';
-import Anthropic from '@anthropic-ai/sdk';
 import ReactMarkdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
+import Refinement from './components/Refinement';
 
 const PRD_QUESTIONS = [
   { id: "1_SPEC", text: "What's the feature in one sentence?" },
@@ -39,65 +42,13 @@ export const PRD_QUESTION_TO_PROMPT: Record<
   `,
 }
 
-const callAnthropicAPI = async (prompt: string): Promise<string> => {
-  const requestBody: Anthropic.MessageCreateParamsStreaming = {
-    model: 'claude-3-5-sonnet-20240620',
-    messages: [{ role: 'user', content: prompt }],
-    stream: true,
-    max_tokens: 1000,
-  };
-
-  try {
-    const response = await fetch('http://localhost:3001/api/anthropic', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error('Response body is not readable');
-    }
-
-    let result = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = new TextDecoder().decode(value);
-      const lines = chunk.split('\n').filter(line => line.trim() !== '');
-
-      for (const line of lines) {
-        if (line.startsWith('data:')) {
-          const data = JSON.parse(line.slice(5));
-          if (data.type === 'text_delta') {
-            result += data.text;
-          }
-        }
-      }
-    }
-
-    return result;
-  } catch (error) {
-    console.error('Error calling backend service:', error);
-    throw new Error('Failed to get AI response');
-  }
-};
-
-
 const App: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [responses, setResponses] = useState<Record<number, string>>({});
   const [aiResponses, setAiResponses] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
-  const [insights, setInsights] = useState<string | null>(null);
+  const [isRefinementStarted, setIsRefinementStarted] = useState(false);
+  const [finalizedPRD, setFinalizedPRD] = useState<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -105,7 +56,7 @@ const App: React.FC = () => {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-  }, [responses[currentStep]]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -138,32 +89,20 @@ const App: React.FC = () => {
     if (currentStep < PRD_QUESTIONS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      setIsGeneratingInsights(true);
-      try {
-        const allResponses = PRD_QUESTIONS.map((q, index) => ({
-          question: q.text,
-          userResponse: responses[index],
-          aiResponse: aiResponses[index],
-        }));
-
-        const insightsPrompt = `Based on the following PRD responses, provide key insights and recommendations:
-          ${JSON.stringify(allResponses, null, 2)}
-          Please summarize the key points and offer strategic advice for this product feature.`;
-
-        const insights = await callAnthropicAPI(insightsPrompt);
-        setInsights(insights);
-      } catch (error) {
-        console.error('Error generating insights:', error);
-        setInsights("An error occurred while generating insights. Please try again.");
-      } finally {
-        setIsGeneratingInsights(false);
-      }
+      setIsRefinementStarted(true);
     }
   }
 
+  const handleRefinementComplete = (finalizedPRD: any) => {
+    setFinalizedPRD(finalizedPRD);
+    // Here you would typically call a function to create a GitHub issue
+    console.log('Finalized PRD:', finalizedPRD);
+  };
+
   const handleEdit = (step: number) => {
     setCurrentStep(step);
-    setInsights(null);
+    setIsRefinementStarted(false);
+    setFinalizedPRD(null);
   };
 
   return (
@@ -183,154 +122,151 @@ const App: React.FC = () => {
           <SparklesIcon className="absolute -top-4 -left-6 w-8 h-8 text-yellow-400 animate-pulse" />
         </h1>
 
-        <div className="mb-12 relative">
-          <div className="flex justify-between items-center">
-            {PRD_QUESTIONS.map((_, index) => (
-              <motion.div
-                key={index}
-                initial={false}
-                animate={{
-                  scale: index <= currentStep ? 1 : 0.8,
-                  opacity: index <= currentStep ? 1 : 0.5,
-                }}
-                className={`w-12 h-12 rounded-full flex items-center justify-center ${index < currentStep
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-                  : index === currentStep
-                    ? 'bg-gradient-to-r from-blue-400 to-purple-500 text-white'
-                    : 'bg-gray-200 text-gray-400'
-                  } transition-all duration-300 ease-in-out`}
-              >
-                {index < currentStep ? (
-                  <CheckIcon className="w-6 h-6" />
-                ) : (
-                  <span className="text-lg font-semibold">{index + 1}</span>
-                )}
-              </motion.div>
-            ))}
-          </div>
-          <motion.div
-            className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden"
-            initial={{ width: 0 }}
-            animate={{ width: '100%' }}
-            transition={{ duration: 0.5 }}
-          >
-            <motion.div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${((currentStep + 1) / PRD_QUESTIONS.length) * 100}%` }}
-              transition={{ duration: 0.5 }}
-            ></motion.div>
-          </motion.div>
-        </div>
-
-        <AnimatePresence>
-          {Object.entries(aiResponses).map(([step, response]) => (
-            <motion.div
-              key={`response-${step}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="mb-8"
-            >
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border-l-4 border-blue-500 relative">
-                <BrainCircuitIcon className="absolute top-4 right-4 w-8 h-8 text-blue-500 opacity-50" />
-                <h3 className="font-semibold text-gray-800 mb-2 text-lg">AI Insights:</h3>
-                <div className="text-gray-700 prose max-w-none">
-                  <ReactMarkdown
-                    rehypePlugins={[rehypeRaw, rehypeSanitize]}
+        {!isRefinementStarted ? (
+          <>
+            <div className="mb-12 relative">
+              <div className="flex justify-between items-center">
+                {PRD_QUESTIONS.map((_, index) => (
+                  <motion.div
+                    key={index}
+                    initial={false}
+                    animate={{
+                      scale: index <= currentStep ? 1 : 0.8,
+                      opacity: index <= currentStep ? 1 : 0.5,
+                    }}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${index < currentStep
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                      : index === currentStep
+                        ? 'bg-gradient-to-r from-blue-400 to-purple-500 text-white'
+                        : 'bg-gray-200 text-gray-400'
+                      } transition-all duration-300 ease-in-out`}
                   >
-                    {response}
-                  </ReactMarkdown>
-                </div>
-              </div>
-              <button
-                onClick={() => handleEdit(Number(step))}
-                className="mt-2 text-blue-500 hover:text-blue-600 transition duration-300 ease-in-out font-medium"
-              >
-                Edit Response
-              </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        <AnimatePresence mode="wait">
-          {PRD_QUESTIONS.map((question, index) => (
-            currentStep === index && (
-              <motion.div
-                key={question.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="mb-8"
-              >
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4">{question.text}</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="relative">
-                    <textarea
-                      ref={textareaRef}
-                      name="userInput"
-                      className="w-full p-4 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 pr-12 resize-none"
-                      rows={3}
-                      required
-                      defaultValue={responses[index] || ''}
-                      placeholder="Type your answer here..."
-                    ></textarea>
-                    <ArrowRightIcon className="absolute right-4 bottom-4 w-6 h-6 text-gray-400" />
-                  </div>
-                  <motion.button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isLoading}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center">
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                      </span>
+                    {index < currentStep ? (
+                      <CheckIcon className="w-6 h-6" />
                     ) : (
-                      'Submit'
+                      <span className="text-lg font-semibold">{index + 1}</span>
                     )}
-                  </motion.button>
-                </form>
+                  </motion.div>
+                ))}
+              </div>
+              <motion.div
+                className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden"
+                initial={{ width: 0 }}
+                animate={{ width: '100%' }}
+                transition={{ duration: 0.5 }}
+              >
+                <motion.div
+                  className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((currentStep + 1) / PRD_QUESTIONS.length) * 100}%` }}
+                  transition={{ duration: 0.5 }}
+                />
               </motion.div>
-            )
-          ))}
-        </AnimatePresence>
+            </div>
 
+            <AnimatePresence>
+              {Object.entries(aiResponses).map(([step, response]) => (
+                <motion.div
+                  key={`response-${step}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="mb-8"
+                >
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border-l-4 border-blue-500 relative">
+                    <BrainCircuitIcon className="absolute top-4 right-4 w-8 h-8 text-blue-500 opacity-50" />
+                    <h3 className="font-semibold text-gray-800 mb-2 text-lg">AI Insights:</h3>
+                    <div className="text-gray-700 prose max-w-none">
+                      <ReactMarkdown
+                        rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                      >
+                        {response}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleEdit(Number(step))}
+                    className="mt-2 text-blue-500 hover:text-blue-600 transition duration-300 ease-in-out font-medium"
+                  >
+                    Edit Response
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
 
-        {isGeneratingInsights && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-center py-8"
-          >
-            <SparklesIcon className="w-12 h-12 text-purple-500 mx-auto animate-pulse" />
-            <p className="mt-4 text-lg font-semibold text-gray-700">Generating PRD Insights...</p>
-          </motion.div>
+            <AnimatePresence mode="wait">
+              {PRD_QUESTIONS.map((question, index) => (
+                currentStep === index && (
+                  <motion.div
+                    key={question.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="mb-8"
+                  >
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-4">{question.text}</h2>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="relative">
+                        <textarea
+                          ref={textareaRef}
+                          name="userInput"
+                          className="w-full p-4 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 pr-12 resize-none"
+                          rows={3}
+                          required
+                          defaultValue={responses[index] || ''}
+                          placeholder="Type your answer here..."
+                        />
+                        <ArrowRightIcon className="absolute right-4 bottom-4 w-6 h-6 text-gray-400" />
+                      </div>
+                      <motion.button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isLoading}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {isLoading ? (
+                          <span className="flex items-center justify-center">
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Processing...
+                          </span>
+                        ) : (
+                          'Submit'
+                        )}
+                      </motion.button>
+                    </form>
+                  </motion.div>
+                )
+              ))}
+            </AnimatePresence>
+          </>
+        ) : (
+          <Refinement
+            initialPRD={Object.values(aiResponses).join('\n\n')}
+            onComplete={handleRefinementComplete}
+          />
         )}
 
-        {insights && (
+        {finalizedPRD && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mt-8 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-6 border-l-4 border-purple-500"
+            className="mt-8 bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6 border-l-4 border-green-500"
           >
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">PRD Insights</h3>
-            <div className="text-gray-700 prose max-w-none">
-              <ReactMarkdown
-                rehypePlugins={[rehypeRaw, rehypeSanitize]}
-              >
-                {insights}
-              </ReactMarkdown>
-            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">Finalized PRD</h3>
+            <p>Your PRD has been finalized and is ready to be created as a GitHub issue.</p>
+            <button
+              onClick={() => {/* Implement GitHub issue creation here */ }}
+              className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition duration-300"
+            >
+              Create GitHub Issue
+            </button>
           </motion.div>
         )}
       </motion.div>
@@ -339,4 +275,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
