@@ -8,11 +8,12 @@ import ReactMarkdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
 import Refinement from './components/Refinement';
-import {
+import type {
   FinalizedPRD,
   GitHubIssueCreationRequest,
   GitHubIssueCreationResponse
 } from '../../shared/src/types';
+import type Anthropic from '@anthropic-ai/sdk';
 
 const PRD_QUESTIONS = [
   { id: "1_SPEC", text: "What's the feature in one sentence?" },
@@ -46,6 +47,57 @@ export const PRD_QUESTION_TO_PROMPT: Record<
     <response-text-formatting>Nicely formatted markdown</response-text-formatting>
   `,
 }
+
+const callAnthropicAPI = async (prompt: string): Promise<string> => {
+  const requestBody: Anthropic.MessageCreateParamsStreaming = {
+    model: 'claude-3-5-sonnet-20240620',
+    messages: [{ role: 'user', content: prompt }],
+    stream: true,
+    max_tokens: 1000,
+  };
+
+  try {
+    const response = await fetch('http://localhost:3001/api/anthropic', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Response body is not readable');
+    }
+
+    let result = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = new TextDecoder().decode(value);
+      const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+      for (const line of lines) {
+        if (line.startsWith('data:')) {
+          const data = JSON.parse(line.slice(5));
+          if (data.type === 'text_delta') {
+            result += data.text;
+          }
+        }
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error calling backend service:', error);
+    throw new Error('Failed to get AI response');
+  }
+};
 
 const App: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);

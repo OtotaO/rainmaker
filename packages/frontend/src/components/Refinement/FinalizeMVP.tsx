@@ -1,12 +1,13 @@
 import type React from 'react';
 import { useState } from 'react';
+import type { AcceptanceCriterion, EpicAndTasks, Feature, FinalizedPRD, MVPFeatures } from '../../../../shared/src/types';
 
 interface FinalizeMVPProps {
   refinedPRD: string;
-  epicsAndTasks: any;
-  mvpFeatures: any;
-  acceptanceCriteria: any;
-  onComplete: (finalizedPRD: any) => void;
+  epicsAndTasks: EpicAndTasks;
+  mvpFeatures: MVPFeatures;
+  acceptanceCriteria: AcceptanceCriterion[];
+  onComplete: (finalizedPRD: FinalizedPRD) => void;
 }
 
 const FinalizeMVP: React.FC<FinalizeMVPProps> = ({
@@ -40,18 +41,18 @@ const FinalizeMVP: React.FC<FinalizeMVPProps> = ({
       <div className="mb-4">
         <h4>MVP Features</h4>
         <ul>
-          {mvpFeatures.mvpFeatures.map((feature: any) => (
+          {mvpFeatures.mvpFeatures.map((feature: Feature) => (
             <li key={feature.id}>{feature.title}</li>
           ))}
         </ul>
       </div>
       <div className="mb-4">
         <h4>Acceptance Criteria</h4>
-        {acceptanceCriteria.map((feature: any) => (
-          <div key={feature.id}>
-            <h5>{feature.title}</h5>
+        {acceptanceCriteria.map((ac: AcceptanceCriterion) => (
+          <div key={ac.id}>
+            <h5>{ac.description}</h5>
             <ul>
-              {feature.criteria.map((criterion: string, index: number) => (
+              {ac.criteria.map((criterion: string, index: number) => (
                 <li key={index}>{criterion}</li>
               ))}
             </ul>

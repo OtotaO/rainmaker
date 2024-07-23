@@ -24,6 +24,11 @@ export interface Task {
   description: string;
 }
 
+export type EpicAndTasks = {
+  epics: Epic[];
+  tasks: Task[];
+};
+
 export interface Feature {
   id: string;
   title: string;
