@@ -10,12 +10,12 @@ import TeamReview from './TeamReview';
 import FinalizeMVP from './FinalizeMVP';
 
 enum RefinementStep {
-  InitialReview,
-  EpicTaskBreakdown,
-  MVPPrioritization,
-  AcceptanceCriteria,
-  TeamReview,
-  FinalizeMVP
+  InitialReview = 'InitialReview',
+  EpicTaskBreakdown = 'EpicTaskBreakdown',
+  MVPPrioritization = 'MVPPrioritization',
+  AcceptanceCriteria = 'AcceptanceCriteria',
+  TeamReview = 'TeamReview',
+  FinalizeMVP = 'FinalizeMVP'
 }
 
 interface RefinementProps {
