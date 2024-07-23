@@ -1,0 +1,11 @@
+[install]
+exact = true
+
+[install.cache]
+dir = ".bun"
+
+[test]
+coverage = true
+
+[debug]
+progress = true
