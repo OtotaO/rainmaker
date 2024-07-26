@@ -175,7 +175,7 @@ ${finalizedPRD.finalNotes}
         <div className="p-8">
           <h1 className="text-3xl font-bold text-center relative mb-8">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
-              AI-Driven PRD Generator
+              AI Product Team
             </span>
             <SparklesIcon className="absolute -top-6 -left-6 w-8 h-8 text-yellow-400" />
           </h1>

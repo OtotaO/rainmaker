@@ -6,7 +6,9 @@ import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-meth
 
 type GitHubIssue = RestEndpointMethodTypes['issues']['listForRepo']['response']['data'][0];
 
-const octokit = new Octokit({ log: console, auth: process.env.GITHUB_TOKEN });
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN,
+});
 
 // GitHub repository details
 const owner = process.env.GITHUB_OWNER || '';
