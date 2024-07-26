@@ -40,6 +40,7 @@ export const PlannedAdjustmentSchema = z.object({
   id: z.string(),
   reasoningForAdjustment: z.string(),
   adjustmentDescription: z.string(),
+  learningJournalEntryId: z.string(),
 });
 
 export const LearningJournalEntrySchema = z.object({
