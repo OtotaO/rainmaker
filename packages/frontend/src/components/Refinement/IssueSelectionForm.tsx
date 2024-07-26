@@ -46,7 +46,7 @@ export const IssueSelectionForm: React.FC<IssueSelectionFormProps> = ({ onComple
       }
     } catch (error) {
       console.error('Failed to fetch GitHub issues:', error);
-      setError(error.message);
+      setError((error as Error).message);
     } finally {
       setIsLoading(false);
     }

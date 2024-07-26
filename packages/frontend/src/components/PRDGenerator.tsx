@@ -10,6 +10,7 @@ import { FinalizedPRDDisplay } from './Refinement/FinalizedPRDDisplay';
 import { LearningJournalToggle } from './Refinement/LearningJournalToggle';
 import type { PRDGeneratorProps } from './types';
 import type { GitHubIssue, FinalizedPRD } from '@shared/src/types';
+import Refinement from './Refinement';
 
 // START: [CONST-01]
 export const PRD_QUESTIONS = [
@@ -104,7 +105,7 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ onComplete }) => {
   const handleCreateGitHubIssue = async () => {
     if (!finalizedPRD) return;
 
-    const title = "New PRD: " + finalizedPRD.refinedPRD.split('\n')[0];
+    const title = `New PRD: ${finalizedPRD.refinedPRD.split('\n')[0]}`;
     const body = `
 # PRD: ${title}
 
@@ -160,7 +161,7 @@ ${finalizedPRD.finalNotes}
         transition={{ duration: 0.5 }}
         className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-400 to-purple-500 rounded-bl-full opacity-10 transform rotate-45"></div>
+        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-400 to-purple-500 rounded-bl-full opacity-10 transform rotate-45" />
 
         <h1 className="text-4xl font-bold text-gray-900 mb-8 relative">
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
@@ -212,13 +213,6 @@ ${finalizedPRD.finalNotes}
 };
 
 const callAnthropicAPI = async (prompt: string): Promise<string> => {
-  const requestBody: Anthropic.MessageCreateParamsStreaming = {
-    model: 'claude-3-5-sonnet-20240620',
-    messages: [{ role: 'user', content: prompt }],
-    stream: true,
-    max_tokens: 1000,
-  };
-
   try {
     const response = await fetch('http://localhost:3001/api/anthropic', {
       method: 'POST',
