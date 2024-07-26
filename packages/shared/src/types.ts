@@ -1,91 +1,74 @@
-export interface Question {
-  id: string;
-  text: string;
-}
+// START: [04-LRNAI-SH-3.1]
+import { z } from 'zod';
 
-export interface PRDState {
-  currentStep: number;
-  responses: Record<number, string>;
-  aiResponses: Record<number, string>;
-  isLoading: boolean;
-}
-
-// PRD Refinement Types
-export interface Epic {
-  id: string;
+export interface GitHubIssue {
+  id: number;
+  number: number;
   title: string;
-  description: string;
+  body: string;
+  labels: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface Task {
-  id: string;
-  epicId: string;
-  title: string;
-  description: string;
+export interface GitHubIssueRequest {
+  owner: string;
+  repo: string;
 }
 
-export type EpicAndTasks = {
-  epics: Epic[];
-  tasks: Task[];
-};
-
-export interface Feature {
-  id: string;
-  title: string;
-}
-
-export interface MVPFeatures {
-  mvpFeatures: Feature[];
-  futureFeatures: Feature[];
-}
-
-export interface AcceptanceCriterion {
-  id: string;
-  featureId: string;
-  description: string;
-}
-
-export interface RefinementStep {
-  epicTaskBreakdown: {
-    epics: Epic[];
-    tasks: Task[];
-  };
-  mvpPrioritization: MVPFeatures;
-  acceptanceCriteria: AcceptanceCriterion[];
+export interface GitHubIssueResponse {
+  issues: GitHubIssue[];
 }
 
 export interface FinalizedPRD {
   refinedPRD: string;
   epicsAndTasks: {
-    epics: Epic[];
-    tasks: Task[];
+    [key: string]: string[];
   };
-  mvpFeatures: MVPFeatures;
-  acceptanceCriteria: AcceptanceCriterion[];
+  mvpFeatures: string[];
+  acceptanceCriteria: {
+    [key: string]: string[];
+  };
   finalNotes: string;
 }
 
-// GitHub Integration Types
-export interface GitHubIssueCreationRequest {
-  title: string;
-  body: string;
-  labels?: string[];
+export interface PRDGeneratorProps {
+  onComplete: (finalizedPRD: FinalizedPRD) => void;
 }
 
-export interface GitHubIssueCreationResponse {
-  success: boolean;
-  issueUrl?: string;
-  issueNumber?: number;
-  error?: string;
-}
+export const PlannedAdjustmentSchema = z.object({
+  id: z.string(),
+  reasoningForAdjustment: z.string(),
+  adjustmentDescription: z.string(),
+});
 
-export interface GitHubCommentCreationRequest {
-  issueNumber: number;
-  comment: string;
-}
+export const LearningJournalEntrySchema = z.object({
+  id: z.string(),
+  timestamp: z.string().datetime(),
+  userAction: z.string(),
+  details: z.string(),
+  selfReflectionOnCurrentDetails: z.string(),
+  globalSelfReflectionOnEntireJournalSoFar: z.string(),
+  plannedAdjustments: z.array(PlannedAdjustmentSchema),
+});
 
-export interface GitHubCommentCreationResponse {
-  success: boolean;
-  commentUrl?: string;
-  error?: string;
-}
+export const AIAssistanceLevelSchema = z.object({
+  level: z.number().int().min(1).max(4),
+  explanation: z.string(),
+});
+
+export const LearningJournalEntryRequestSchema = LearningJournalEntrySchema.omit({
+  id: true,
+  timestamp: true,
+});
+
+export const LearningJournalEntriesResponseSchema = z.array(LearningJournalEntrySchema);
+
+export const AIAssistanceLevelResponseSchema = AIAssistanceLevelSchema;
+
+export type LearningJournalEntry = z.infer<typeof LearningJournalEntrySchema>;
+export type AIAssistanceLevel = z.infer<typeof AIAssistanceLevelSchema>;
+export type LearningJournalEntryRequest = z.infer<typeof LearningJournalEntryRequestSchema>;
+export type LearningJournalEntriesResponse = z.infer<typeof LearningJournalEntriesResponseSchema>;
+export type AIAssistanceLevelResponse = z.infer<typeof AIAssistanceLevelResponseSchema>;
+// END: [04-LRNAI-SH-3.1] [double check: This implementation defines Zod schemas for all required types and exports both the schemas and inferred types. It provides strong typing and validation for our learning journal and AI assistance level data structures.]
