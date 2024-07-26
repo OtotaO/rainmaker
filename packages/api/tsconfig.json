@@ -6,7 +6,9 @@
     "esModuleInterop": true,
     "strict": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "paths": {
+      "@shared/*": ["../shared/src/*"]
+    }
   },
   "ts-node": {
     "esm": true,

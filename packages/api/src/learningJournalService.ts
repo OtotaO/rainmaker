@@ -6,8 +6,8 @@ import type {
   LearningJournalEntry,
   AIAssistanceLevel,
   LearningJournalEntryRequest,
-} from '../../shared/src/types';
-import { AIAssistanceLevelSchema } from '../../shared/src/types';
+} from '@shared/types';
+import { AIAssistanceLevelSchema } from '@shared/types';
 
 import { createLLMClient } from 'llm-polyglot';
 import Instructor from '@instructor-ai/instructor';
@@ -101,4 +101,4 @@ export class LearningJournalService {
     Respond with a JSON object containing 'level' (number 1-4) and 'explanation' (string) fields.`;
   }
 }
-// END: [04-LRNAI-BE-1.2, 04-LRNAI-EH-5.1, 04-LRNAI-EH-5.2, 04-LRNAI-EH-5.3, 04-LRNAI-EH-5.4, 04-LRNAI-EH-5.5] [double check: This implementation provides a complete LearningJournalService using Anthropic's API instead of OpenAI. It includes methods for adding entries, retrieving entries, and calculating the AI assistance level. Error handling for database failures (5.1), AI service failures (5.2), data validation (5.3), and clear error messages (5.5) are implemented. Concurrency handling (5.4) is managed by the database. The code is complete and aligns with the project's actual structure and technologies.]
+// END: [04-LRNAI-BE-1.2, 04-LRNAI-EH-5.1, 04-LRNAI-EH-5.2, 04-LRNAI-EH-5.3, 04-LRNAI-EH-5.4, 04-LRNAI-EH-5.5]
