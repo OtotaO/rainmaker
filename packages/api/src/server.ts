@@ -18,7 +18,6 @@ try {
     apiKey: process.env.ANTHROPIC_API_KEY,
   });
 
-  const app = new Hono();
   app.use('/*', cors());
 
   app.post('/api/anthropic', async (c) => {
@@ -116,7 +115,11 @@ try {
   console.error('Error starting server:', error);
 }
 
+const port = 3001;
+
+console.log(`Server is running on port ${port}`);
+
 export default {
-  port: 3001,
+  port,
   fetch: app.fetch,
 };

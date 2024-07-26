@@ -11,6 +11,7 @@ import { LearningJournalToggle } from './Refinement/LearningJournalToggle';
 import type { PRDGeneratorProps } from './types';
 import type { GitHubIssue, FinalizedPRD } from '@shared/src/types';
 import Refinement from './Refinement';
+import type Anthropic from '@anthropic-ai/sdk';
 
 // START: [CONST-01]
 export const PRD_QUESTIONS = [
@@ -213,6 +214,13 @@ ${finalizedPRD.finalNotes}
 };
 
 const callAnthropicAPI = async (prompt: string): Promise<string> => {
+  const requestBody: Anthropic.MessageCreateParamsStreaming = {
+    model: 'claude-3-5-sonnet-20240620',
+    messages: [{ role: 'user', content: prompt }],
+    stream: true,
+    max_tokens: 1000,
+  };
+
   try {
     const response = await fetch('http://localhost:3001/api/anthropic', {
       method: 'POST',
