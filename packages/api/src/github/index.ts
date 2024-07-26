@@ -1,6 +1,10 @@
 // File: packages/api/src/github/index.ts
 
 import { Octokit } from '@octokit/rest';
+import { RequestError } from '@octokit/request-error';
+import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods';
+
+type GitHubIssue = RestEndpointMethodTypes['issues']['listForRepo']['response']['data'][0];
 
 // Initialize Octokit with the GitHub token
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
@@ -56,5 +60,57 @@ export const addCommentToIssue = async (issueNumber: number, comment: string) =>
       success: false,
       error: 'Failed to add comment to GitHub issue',
     };
+  }
+};
+
+export const fetchOpenIssues = async (owner: string, repo: string): Promise<GitHubIssue[]> => {
+  try {
+    const response = await octokit.issues.listForRepo({
+      owner,
+      repo,
+      state: 'open',
+      per_page: 100,
+    });
+
+    if (response.data.length === 0) {
+      // Handle the case when there are no open issues in the repository
+      console.warn(`No open issues found for ${owner}/${repo}`);
+      return [];
+    }
+
+    return (
+      response.data
+        .filter((issue) => issue !== undefined)
+        .map((issue) => ({
+          ...issue,
+          id: issue.id,
+          number: issue.number,
+          title: issue.title,
+          body: issue.body || '',
+          labels: issue.labels.map((label) =>
+            typeof label === 'string' ? label : label?.name || ''
+          ),
+          createdAt: issue.created_at,
+          updatedAt: issue.updated_at,
+        })) || []
+    );
+  } catch (error) {
+    if (error instanceof RequestError) {
+      // Handle GitHub API failures or timeouts
+      if ((error as RequestError).status === 404) {
+        throw new Error(`Repository not found: ${owner}/${repo}`);
+      }
+
+      if (
+        (error as RequestError).status === 403 &&
+        (error as RequestError).message.includes('API rate limit exceeded')
+      ) {
+        throw new Error('GitHub API rate limit exceeded. Please try again later.');
+      }
+
+      throw new Error(`GitHub API error: ${(error as RequestError).message}`);
+    }
+    console.error('Unexpected error fetching GitHub issues:', error);
+    throw new Error('An unexpected error occurred while fetching GitHub issues');
   }
 };

@@ -34,7 +34,7 @@ export const IssueSelectionForm: React.FC<IssueSelectionFormProps> = ({ onComple
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/github-issues?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`);
+      const response = await fetch(`http://localhost:3001/api/github-issues?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch GitHub issues');

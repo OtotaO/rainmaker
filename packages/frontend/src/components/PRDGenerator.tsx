@@ -126,7 +126,7 @@ ${finalizedPRD.finalNotes}
     `;
 
     try {
-      const response = await fetch('/api/github/create-issue', {
+      const response = await fetch('http://localhost:3001/api/github/create-issue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, body, labels: ['PRD', 'MVP'] })

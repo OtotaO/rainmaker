@@ -1,8 +1,46 @@
 // START: [04-LRNAI-FE-2.1, 04-LRNAI-FE-2.2]
 import type React from 'react';
 import { useState, useEffect } from 'react';
-import type { LearningJournalEntry, AIAssistanceLevel, LearningJournalEntryRequestSchema } from '@shared/src/types';
 import { z } from 'zod';
+
+export const PlannedAdjustmentSchema = z.object({
+  id: z.string(),
+  reasoningForAdjustment: z.string(),
+  adjustmentDescription: z.string(),
+});
+
+
+export const LearningJournalEntrySchema = z.object({
+  id: z.string(),
+  timestamp: z.string().datetime(),
+  userAction: z.string(),
+  details: z.string(),
+  selfReflectionOnCurrentDetails: z.string(),
+  globalSelfReflectionOnEntireJournalSoFar: z.string(),
+  plannedAdjustments: z.array(PlannedAdjustmentSchema),
+});
+
+export const AIAssistanceLevelSchema = z.object({
+  level: z.number().int().min(1).max(4),
+  explanation: z.string(),
+});
+
+export const LearningJournalEntryRequestSchema = LearningJournalEntrySchema.omit({
+  id: true,
+  timestamp: true,
+});
+
+export const LearningJournalEntriesResponseSchema = z.array(LearningJournalEntrySchema);
+
+export const AIAssistanceLevelResponseSchema = AIAssistanceLevelSchema;
+
+export type LearningJournalEntry = z.infer<typeof LearningJournalEntrySchema>;
+export type AIAssistanceLevel = z.infer<typeof AIAssistanceLevelSchema>;
+export type LearningJournalEntryRequest = z.infer<typeof LearningJournalEntryRequestSchema>;
+export type LearningJournalEntriesResponse = z.infer<typeof LearningJournalEntriesResponseSchema>;
+export type AIAssistanceLevelResponse = z.infer<typeof AIAssistanceLevelResponseSchema>;
+// END: [04-LRNAI-SH-3.1] [double check: This implementation defines Zod schemas for all required types and exports both the schemas and inferred types. It provides strong typing and validation for our learning journal and AI assistance level data structures.]
+
 
 interface LearningJournalComponentProps {
   onEntryAdded: () => void;
@@ -22,7 +60,7 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
 
   const fetchEntries = async () => {
     try {
-      const response = await fetch('/api/learning-journal/entries');
+      const response = await fetch('http://localhost:3001/api/learning-journal/entries');
       if (!response.ok) throw new Error('Failed to fetch entries');
       const data = await response.json();
       setEntries(data);
@@ -33,7 +71,7 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
 
   const fetchAssistanceLevel = async () => {
     try {
-      const response = await fetch('/api/ai-assistance-level');
+      const response = await fetch('http://localhost:3001/api/ai-assistance-level');
       if (!response.ok) throw new Error('Failed to fetch AI assistance level');
       const data = await response.json();
       setAssistanceLevel(data);
@@ -57,7 +95,7 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
       // Validate the new entry using Zod schema
       LearningJournalEntryRequestSchema.parse(newEntry);
 
-      const response = await fetch('/api/learning-journal/entry', {
+      const response = await fetch('http://localhost:3001/api/learning-journal/entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newEntry),
@@ -69,13 +107,13 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
           // Handle Zod validation errors from the server
           const zodErrors: z.ZodError = errorData.details;
           const formattedErrors: Record<string, string[]> = {};
-          zodErrors.errors.forEach(err => {
+          for (const err of zodErrors.errors) {
             const field = err.path.join('.');
             if (!formattedErrors[field]) {
               formattedErrors[field] = [];
             }
             formattedErrors[field].push(err.message);
-          });
+          }
           setValidationErrors(formattedErrors);
         } else {
           throw new Error(errorData.error || 'Failed to add entry');
@@ -90,13 +128,13 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
       if (error instanceof z.ZodError) {
         // Handle client-side Zod validation errors
         const formattedErrors: Record<string, string[]> = {};
-        error.errors.forEach(err => {
+        for (const err of error.errors) {
           const field = err.path.join('.');
           if (!formattedErrors[field]) {
             formattedErrors[field] = [];
           }
           formattedErrors[field].push(err.message);
-        });
+        }
         setValidationErrors(formattedErrors);
       } else {
         setError('Failed to add journal entry. Please try again.');
