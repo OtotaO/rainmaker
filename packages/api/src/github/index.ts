@@ -6,8 +6,7 @@ import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-meth
 
 type GitHubIssue = RestEndpointMethodTypes['issues']['listForRepo']['response']['data'][0];
 
-// Initialize Octokit with the GitHub token
-const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+const octokit = new Octokit({ log: console, auth: process.env.GITHUB_TOKEN });
 
 // GitHub repository details
 const owner = process.env.GITHUB_OWNER || '';
@@ -71,6 +70,8 @@ export const fetchOpenIssues = async (owner: string, repo: string): Promise<GitH
       state: 'open',
       per_page: 100,
     });
+
+    console.log('response:', response.data);
 
     if (response.data.length === 0) {
       // Handle the case when there are no open issues in the repository

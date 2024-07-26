@@ -114,7 +114,7 @@ try {
     }
   });
 
-  app.get('/api/github-issues', async (c) => {
+  app.get('/api/github/issues', async (c) => {
     const issues = await fetchOpenIssues('unscene-inc', 'Scene');
     return c.json(issues);
   });
