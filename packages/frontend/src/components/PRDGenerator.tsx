@@ -1,15 +1,12 @@
-// START: [04-LRNAI-FE-2.1, 04-LRNAI-FE-2.2, 03-ISSID-FE-2.1, 03-ISSID-FE-2.2]
 import type React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { SparklesIcon } from 'lucide-react';
-import { LearningJournalComponent } from './Refinement/LearningJournalComponent'
-import { IssueSelectionWrapper } from './Refinement/IssueSelectionWrapper';
+import { SparklesIcon, BookOpenIcon, RefreshCwIcon } from 'lucide-react';
+import { LearningJournalComponent } from './Refinement/LearningJournalComponent';
 import { PRDQuestionFlow } from './Refinement/PRDQuestionFlow';
 import { FinalizedPRDDisplay } from './Refinement/FinalizedPRDDisplay';
-import { LearningJournalToggle } from './Refinement/LearningJournalToggle';
 import type { PRDGeneratorProps } from './types';
-import type { GitHubIssue, FinalizedPRD } from '@shared/src/types';
+import type { FinalizedPRD, GitHubIssue } from '../../../shared/src/types'
 import Refinement from './Refinement';
 import type Anthropic from '@anthropic-ai/sdk';
 
@@ -57,6 +54,24 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ onComplete }) => {
   const [finalizedPRD, setFinalizedPRD] = useState<FinalizedPRD | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<GitHubIssue | null>(null);
   const [showLearningJournal, setShowLearningJournal] = useState(false);
+  const [issues, setIssues] = useState<GitHubIssue[]>([]);
+
+  useEffect(() => {
+    fetchIssues();
+  }, []);
+
+  const fetchIssues = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/github/issues');
+      const data = await response.json();
+      setIssues(data);
+    } catch (error) {
+      console.error('Error fetching issues:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -145,7 +160,7 @@ ${finalizedPRD.finalNotes}
     }
   };
 
-  const handleIssueSelected = (issue: GitHubIssue) => {
+  const handleIssueSelect = (issue: GitHubIssue) => {
     setSelectedIssue(issue);
     setCurrentStep(0);
   };
@@ -155,60 +170,97 @@ ${finalizedPRD.finalNotes}
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative overflow-hidden"
-      >
-        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-400 to-purple-500 rounded-bl-full opacity-10 transform rotate-45" />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="p-8">
+          <h1 className="text-3xl font-bold text-center relative mb-8">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
+              AI-Driven PRD Generator
+            </span>
+            <SparklesIcon className="absolute -top-6 -left-6 w-8 h-8 text-yellow-400" />
+          </h1>
 
-        <h1 className="text-4xl font-bold text-gray-900 mb-8 relative">
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
-            AI-Driven PRD Generator
-          </span>
-          <SparklesIcon className="absolute -top-4 -left-6 w-8 h-8 text-yellow-400 animate-pulse" />
-        </h1>
+          <div className="flex justify-between mb-6">
+            <button
+              onClick={toggleLearningJournal}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center"
+            >
+              <BookOpenIcon className="mr-2 h-4 w-4" />
+              {showLearningJournal ? 'Hide' : 'Show'} Learning Journal
+            </button>
+            <button
+              onClick={fetchIssues}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors flex items-center"
+              disabled={isLoading}
+            >
+              <RefreshCwIcon className="mr-2 h-4 w-4" />
+              Refresh Issues
+            </button>
+          </div>
 
-        <LearningJournalToggle
-          showLearningJournal={showLearningJournal}
-          toggleLearningJournal={toggleLearningJournal}
-        />
+          {showLearningJournal && (
+            <LearningJournalComponent onEntryAdded={() => {/* Handle new entry added */ }} />
+          )}
 
-        {showLearningJournal && (
-          <LearningJournalComponent onEntryAdded={() => {/* Handle new entry added */ }} />
-        )}
+          {isLoading ? (
+            <div className="text-center py-8">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <RefreshCwIcon className="h-8 w-8 text-blue-500" />
+              </motion.div>
+              <p className="mt-2 text-gray-600">Loading issues...</p>
+            </div>
+          ) : !selectedIssue && issues.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {issues.map((issue) => (
+                <div
+                  key={issue.id}
+                  className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${selectedIssue?.id === issue.id
+                    ? 'border-blue-500 shadow-lg'
+                    : 'hover:border-gray-300'
+                    }`}
+                  onClick={() => handleIssueSelect(issue)}
+                >
+                  <h3 className="text-lg font-semibold mb-2">{issue.title}</h3>
+                  <p className="text-sm text-gray-600 truncate">{issue.body}</p>
+                </div>
+              ))}
+            </div>
+          ) : !selectedIssue ? (
+            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+              <p className="font-bold">No issues found</p>
+              <p>There are currently no open issues in the repository. Try refreshing or create a new issue.</p>
+            </div>
+          ) : null}
 
-        {!selectedIssue && !isRefinementStarted && (
-          <IssueSelectionWrapper onIssueSelected={handleIssueSelected} />
-        )}
+          {selectedIssue && !isRefinementStarted && (
+            <PRDQuestionFlow
+              currentStep={currentStep}
+              responses={responses}
+              aiResponses={aiResponses}
+              isLoading={isLoading}
+              onSubmit={handleSubmit}
+              onEdit={handleEdit}
+            />
+          )}
 
-        {selectedIssue && !isRefinementStarted && (
-          <PRDQuestionFlow
-            currentStep={currentStep}
-            responses={responses}
-            aiResponses={aiResponses}
-            isLoading={isLoading}
-            onSubmit={handleSubmit}
-            onEdit={handleEdit}
-          />
-        )}
+          {isRefinementStarted && (
+            <Refinement
+              initialPRD={Object.values(aiResponses).join('\n\n')}
+              onComplete={handleRefinementComplete}
+            />
+          )}
 
-        {isRefinementStarted && (
-          <Refinement
-            initialPRD={Object.values(aiResponses).join('\n\n')}
-            onComplete={handleRefinementComplete}
-          />
-        )}
-
-        {finalizedPRD && (
-          <FinalizedPRDDisplay
-            finalizedPRD={finalizedPRD}
-            onCreateGitHubIssue={handleCreateGitHubIssue}
-          />
-        )}
-      </motion.div>
+          {finalizedPRD && (
+            <FinalizedPRDDisplay
+              finalizedPRD={finalizedPRD}
+              onCreateGitHubIssue={handleCreateGitHubIssue}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -264,4 +316,4 @@ const callAnthropicAPI = async (prompt: string): Promise<string> => {
   }
 };
 
-// END: [04-LRNAI-FE-2.1, 04-LRNAI-FE-2.2, 03-ISSID-FE-2.1, 03-ISSID-FE-2.2]
+export default PRDGenerator;

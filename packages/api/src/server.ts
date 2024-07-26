@@ -10,6 +10,8 @@ import {
   AIAssistanceLevelResponseSchema,
 } from '../../shared/src/types';
 
+import { fetchOpenIssues } from './github';
+
 const app = new Hono();
 
 try {
@@ -110,6 +112,11 @@ try {
         500
       );
     }
+  });
+
+  app.get('/api/github-issues', async (c) => {
+    const issues = await fetchOpenIssues('unscene-inc', 'Scene');
+    return c.json(issues);
   });
 } catch (error) {
   console.error('Error starting server:', error);
