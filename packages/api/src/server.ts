@@ -11,7 +11,7 @@ import {
 } from '../../shared/src/types';
 
 import { fetchOpenIssues } from './github';
-// import { epicTaskBreakdown } from './refinement/epicTaskBreakdown';
+import { generateLeanPRD } from './prd/prd-generator-service';
 
 const app = new Hono();
 
@@ -104,9 +104,17 @@ try {
     }
   });
 
-  // app.get('/api/prd-suggestions-to-prd', async (c) => {
-  //   const result = await prd
-  // })
+  app.post('/api/prd-suggestions-to-lean-prd', async (c) => {
+    const body = await c.req.json();
+
+    const result = await generateLeanPRD({
+      improvedDescription: body.improvedDescription,
+      successMetric: body.successMetric,
+      criticalRisk: body.criticalRisk,
+    });
+
+    return c.json(result);
+  });
 
   // app.get('/api/epic-task-breakdown', async (c) => {
   //   const result = await epicTaskBreakdown() .getEpicTaskBreakdown();

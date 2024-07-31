@@ -6,4 +6,4 @@ export const anthropic = createLLMClient({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export const instructor = Instructor({ client: anthropic, mode: 'JSON' });
+export const instructor = Instructor({ client: anthropic, mode: 'MD_JSON' });
