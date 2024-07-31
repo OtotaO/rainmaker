@@ -8,19 +8,7 @@ import type {
   LearningJournalEntryRequest,
 } from '@shared/types';
 import { AIAssistanceLevelSchema } from '@shared/types';
-
-import { createLLMClient } from 'llm-polyglot';
-import Instructor from '@instructor-ai/instructor';
-
-const anthropic: Anthropic = createLLMClient({
-  provider: 'anthropic',
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-const instructor = Instructor<typeof anthropic>({
-  client: anthropic,
-  mode: 'JSON',
-});
+import { instructor } from './lib/instructor';
 
 export class LearningJournalService {
   private prisma: PrismaClient;

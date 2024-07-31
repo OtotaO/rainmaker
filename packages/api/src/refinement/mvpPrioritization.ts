@@ -1,13 +1,5 @@
-import { createLLMClient } from 'llm-polyglot';
-import Instructor from '@instructor-ai/instructor';
 import { z } from 'zod';
-
-const anthropic = createLLMClient({
-  provider: 'anthropic',
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-const instructor = Instructor({ client: anthropic, mode: 'JSON' });
+import { instructor } from '../lib/instructor';
 
 export const FeatureSchema = z.object({
   id: z.string().describe('A unique identifier for the feature'),
