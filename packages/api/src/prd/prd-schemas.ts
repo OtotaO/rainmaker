@@ -13,21 +13,21 @@ export const LeanPRDSchema = z.object({
     .object({
       id: z.literal('01-CORE'),
       appliedCritiqueIds: z.array(z.string()),
-      content: z.string().max(200),
+      content: z.string().max(300),
     })
     .describe('A concise 1-2 sentence definition of the core feature'),
   businessObjective: z
     .object({
       id: z.literal('02-BOBJ'),
       appliedCritiqueIds: z.array(z.string()),
-      content: z.string().max(200),
+      content: z.string().max(300),
     })
     .describe('The main business goal this feature aims to achieve'),
   keyUserStory: z
     .object({
       id: z.literal('03-USER'),
       appliedCritiqueIds: z.array(z.string()),
-      content: z.string().max(200),
+      content: z.string().max(300),
     })
     .describe('The primary user story this feature addresses'),
   userRequirements: z
@@ -38,7 +38,7 @@ export const LeanPRDSchema = z.object({
         content: z.string(),
       })
     )
-    .max(6)
+    .max(8)
     .describe('Essential user-facing requirements and functionality'),
   acceptanceCriteria: z
     .array(
@@ -48,7 +48,7 @@ export const LeanPRDSchema = z.object({
         content: z.string(),
       })
     )
-    .max(6)
+    .max(8)
     .describe('Specific, measurable criteria to consider the feature complete'),
   successMetrics: z
     .array(
@@ -58,8 +58,8 @@ export const LeanPRDSchema = z.object({
         content: z.string(),
       })
     )
-    .max(3)
-    .describe('2-3 measurable metrics for validating feature success'),
+    .max(4)
+    .describe('Less than 4 measurable metrics for validating feature success'),
   constraints: z
     .array(
       z.object({

@@ -1,57 +1,27 @@
-import type React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { SparklesIcon, BookOpenIcon, RefreshCwIcon } from 'lucide-react';
+import { Button } from "../@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../@/components/ui/card";
+import { Input } from "../@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "../@/components/ui/alert";
 import { LearningJournalComponent } from './Refinement/LearningJournalComponent';
-import { PRDQuestionFlow } from './Refinement/PRDQuestionFlow';
 import { FinalizedPRDDisplay } from './Refinement/FinalizedPRDDisplay';
 import type { PRDGeneratorProps } from './types';
-import type { FinalizedPRD, GitHubIssue } from '../../../shared/src/types'
-import Refinement from './Refinement';
-import type Anthropic from '@anthropic-ai/sdk';
+import type { ImprovedLeanPRDSchema } from '../../../shared/src/types';
+import type { GitHubIssue } from '../../../shared/src/types'
 
-// START: [CONST-01]
-export const PRD_QUESTIONS = [
+const PRD_QUESTIONS = [
   { id: "1_SPEC", text: "What's the feature in one sentence?" },
   { id: "2_SUCCESS_METRIC", text: "How do we measure success in 7 days?" },
   { id: "3_GOTCHAS", text: "What's the one thing that could kill this feature?" },
 ];
 
-export const PRD_QUESTION_TO_PROMPT: Record<
-  (typeof PRD_QUESTIONS)[number]['id'],
-  (userInput: string) => string
-> = {
-  '1_SPEC': (userInput: string) =>
-    `Improve this feature description: "${userInput}". Respond in this format:
-    Original: [CEO's answer]
-    Improved: [Single sentence an engineer can code from]
-    Why better: [One sentence explanation]
-    <response-text-formatting>Nicely formatted markdown - just return the markdown</response-text-formatting>
-    `,
-  '2_SUCCESS_METRIC': (userInput: string) =>
-    `Refine this success metric: "${userInput}". Respond in this format:
-    Original: [CEO's answer]
-    Refined metric: [One concrete, measurable metric for the next week]
-    Why better: [One sentence on why this metric is superior for quick validation]
-    <response-text-formatting>Nicely formatted markdown</response-text-formatting>
-    `,
-  '3_GOTCHAS': (userInput: string) =>
-    `Analyze this potential issue: "${userInput}". Respond in this format:
-    Original concern: [CEO's answer]
-    Critical risk: [Most likely point of failure (technical, adoption, or business model)]
-    Why critical: [One sentence on why addressing this risk is crucial]
-    <response-text-formatting>Nicely formatted markdown</response-text-formatting>
-  `,
-};
-// END: [CONST-01]
-
-export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ onComplete }) => {
+export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [responses, setResponses] = useState<Record<number, string>>({});
-  const [aiResponses, setAiResponses] = useState<Record<number, string>>({});
+  const [responses, setResponses] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [isRefinementStarted, setIsRefinementStarted] = useState(false);
-  const [finalizedPRD, setFinalizedPRD] = useState<FinalizedPRD | null>(null);
+  const [localFinalizedPRD, setFinalizedPRD] = useState<ImprovedLeanPRDSchema | null>(finalizedPRD);
   const [selectedIssue, setSelectedIssue] = useState<GitHubIssue | null>(null);
   const [showLearningJournal, setShowLearningJournal] = useState(false);
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
@@ -78,91 +48,59 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ onComplete }) => {
     const formData = new FormData(e.currentTarget);
     const userInput = formData.get('userInput') as string;
 
-    setResponses({ ...responses, [currentStep]: userInput });
+    setResponses({ ...responses, [PRD_QUESTIONS[currentStep].id]: userInput });
+
+    if (currentStep < PRD_QUESTIONS.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      await generatePRD();
+    }
+  };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    fetchIssues();
+  }, []);
+
+  const generatePRD = async () => {
     setIsLoading(true);
-
-    const currentQuestion = PRD_QUESTION_TO_PROMPT[Object.keys(PRD_QUESTION_TO_PROMPT)[currentStep]];
-    const prompt = currentQuestion(userInput);
-
     try {
-      const aiResponse = await callAnthropicAPI(prompt);
-      setAiResponses({
-        ...aiResponses,
-        [currentStep]: aiResponse,
+      const response = await fetch('http://localhost:3001/api/prd-suggestions-to-lean-prd', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          improvedDescription: responses['1_SPEC'],
+          successMetric: responses['2_SUCCESS_METRIC'],
+          criticalRisk: responses['3_GOTCHAS'],
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: ImprovedLeanPRDSchema = await response.json();
+      setFinalizedPRD(data);
+      onComplete(data);
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
-      setAiResponses({
-        ...aiResponses,
-        [currentStep]: "An error occurred while generating the AI response. Please try again.",
-      });
+      console.error('Error generating PRD:', error);
     } finally {
       setIsLoading(false);
     }
-
-    if (currentStep < Object.keys(PRD_QUESTION_TO_PROMPT).length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      setIsRefinementStarted(true);
-    }
-  }
-
-  const handleRefinementComplete = (finalizedPRD: FinalizedPRD) => {
-    setFinalizedPRD(finalizedPRD);
-    onComplete(finalizedPRD);
   };
 
   const handleEdit = (step: number) => {
     setCurrentStep(step);
-    setIsRefinementStarted(false);
     setFinalizedPRD(null);
-  };
-
-  const handleCreateGitHubIssue = async () => {
-    if (!finalizedPRD) return;
-
-    const title = `New PRD: ${finalizedPRD.refinedPRD.split('\n')[0]}`;
-    const body = `
-# PRD: ${title}
-
-${finalizedPRD.refinedPRD}
-
-## Epics and Tasks
-${JSON.stringify(finalizedPRD.epicsAndTasks, null, 2)}
-
-## MVP Features
-${JSON.stringify(finalizedPRD.mvpFeatures, null, 2)}
-
-## Acceptance Criteria
-${JSON.stringify(finalizedPRD.acceptanceCriteria, null, 2)}
-
-## Final Notes
-${finalizedPRD.finalNotes}
-    `;
-
-    try {
-      const response = await fetch('http://localhost:3001/api/github/create-issue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body, labels: ['PRD', 'MVP'] })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert(`GitHub issue created successfully! URL: ${result.issueUrl}`);
-      } else {
-        alert(`Failed to create GitHub issue: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Error creating GitHub issue:', error);
-      alert('An error occurred while creating the GitHub issue. Please try again.');
-    }
   };
 
   const handleIssueSelect = (issue: GitHubIssue) => {
     setSelectedIssue(issue);
     setCurrentStep(0);
+    setResponses({});
+    setFinalizedPRD(null);
   };
 
   const toggleLearningJournal = () => {
@@ -171,31 +109,25 @@ ${finalizedPRD.finalNotes}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-8">
-          <h1 className="text-3xl font-bold text-center relative mb-8">
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold text-center relative mb-8">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
               AI Product Team
             </span>
             <SparklesIcon className="absolute -top-6 -left-6 w-8 h-8 text-yellow-400" />
-          </h1>
-
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="flex justify-between mb-6">
-            <button
-              onClick={toggleLearningJournal}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center"
-            >
+            <Button onClick={toggleLearningJournal} variant="outline">
               <BookOpenIcon className="mr-2 h-4 w-4" />
               {showLearningJournal ? 'Hide' : 'Show'} Learning Journal
-            </button>
-            <button
-              onClick={fetchIssues}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors flex items-center"
-              disabled={isLoading}
-            >
+            </Button>
+            <Button onClick={fetchIssues} variant="outline" disabled={isLoading}>
               <RefreshCwIcon className="mr-2 h-4 w-4" />
               Refresh Issues
-            </button>
+            </Button>
           </div>
 
           {showLearningJournal && (
@@ -210,110 +142,70 @@ ${finalizedPRD.finalNotes}
               >
                 <RefreshCwIcon className="h-8 w-8 text-blue-500" />
               </motion.div>
-              <p className="mt-2 text-gray-600">Loading issues...</p>
+              <p className="mt-2 text-gray-600">Loading...</p>
             </div>
           ) : !selectedIssue && issues.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {issues.map((issue) => (
-                <div
+                <Card
                   key={issue.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${selectedIssue?.id === issue.id
-                    ? 'border-blue-500 shadow-lg'
-                    : 'hover:border-gray-300'
+                  className={`cursor-pointer transition-all duration-200 ${selectedIssue?.id === issue.id ? 'border-blue-500 shadow-lg' : 'hover:border-gray-300'
                     }`}
                   onClick={() => handleIssueSelect(issue)}
                 >
-                  <h3 className="text-lg font-semibold mb-2">{issue.title}</h3>
-                  <p className="text-sm text-gray-600 truncate">{issue.body}</p>
-                </div>
+                  <CardHeader>
+                    <CardTitle>{issue.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 truncate">{issue.body}</p>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : !selectedIssue ? (
-            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
-              <p className="font-bold">No issues found</p>
-              <p>There are currently no open issues in the repository. Try refreshing or create a new issue.</p>
-            </div>
+            <Alert>
+              <AlertTitle>No issues found</AlertTitle>
+              <AlertDescription>
+                There are currently no open issues in the repository. Try refreshing or create a new issue.
+              </AlertDescription>
+            </Alert>
           ) : null}
 
-          {selectedIssue && !isRefinementStarted && (
-            <PRDQuestionFlow
-              currentStep={currentStep}
-              responses={responses}
-              aiResponses={aiResponses}
-              isLoading={isLoading}
-              onSubmit={handleSubmit}
-              onEdit={handleEdit}
-            />
-          )}
-
-          {isRefinementStarted && (
-            <Refinement
-              initialPRD={Object.values(aiResponses).join('\n\n')}
-              onComplete={handleRefinementComplete}
-            />
+          {selectedIssue && !finalizedPRD && (
+            <form onSubmit={handleSubmit}>
+              <h2 className="text-xl font-semibold mb-4">{PRD_QUESTIONS[currentStep].text}</h2>
+              <Input
+                type="text"
+                name="userInput"
+                placeholder="Enter your response"
+                value={responses[PRD_QUESTIONS[currentStep].id] || ''}
+                onChange={(e) => setResponses({ ...responses, [PRD_QUESTIONS[currentStep].id]: e.target.value })}
+                required
+              />
+              <div className="mt-4 flex justify-between">
+                <Button type="button" onClick={() => handleEdit(Math.max(0, currentStep - 1))} disabled={currentStep === 0}>
+                  Previous
+                </Button>
+                <Button type="submit">
+                  {currentStep < PRD_QUESTIONS.length - 1 ? 'Next' : 'Generate PRD'}
+                </Button>
+              </div>
+            </form>
           )}
 
           {finalizedPRD && (
             <FinalizedPRDDisplay
               finalizedPRD={finalizedPRD}
-              onCreateGitHubIssue={handleCreateGitHubIssue}
+              onCreateGitHubIssue={async () => {
+                // Implement GitHub issue creation logic here
+                console.log('Creating GitHub issue with PRD:', finalizedPRD);
+              }}
             />
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-const callAnthropicAPI = async (prompt: string): Promise<string> => {
-  const requestBody: Anthropic.MessageCreateParamsStreaming = {
-    model: 'claude-3-5-sonnet-20240620',
-    messages: [{ role: 'user', content: prompt }],
-    stream: true,
-    max_tokens: 1000,
-  };
-
-  try {
-    const response = await fetch('http://localhost:3001/api/anthropic', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error('Response body is not readable');
-    }
-
-    let result = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = new TextDecoder().decode(value);
-      const lines = chunk.split('\n').filter(line => line.trim() !== '');
-
-      for (const line of lines) {
-        if (line.startsWith('data:')) {
-          const data = JSON.parse(line.slice(5));
-          if (data.type === 'text_delta') {
-            result += data.text;
-          }
-        }
-      }
-    }
-
-    return result;
-  } catch (error) {
-    console.error('Error calling backend service:', error);
-    throw new Error('Failed to get AI response');
-  }
 };
 
 export default PRDGenerator;

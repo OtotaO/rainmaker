@@ -1,7 +1,8 @@
-import type { FinalizedPRD } from '../../../shared/src/types';
+import type { FinalizedPRD, ImprovedLeanPRDSchema } from '../../../shared/src/types';
 
 export interface PRDGeneratorProps {
-  onComplete: (finalizedPRD: FinalizedPRD) => void;
+  finalizedPRD: ImprovedLeanPRDSchema;
+  onComplete: (finalizedPRD: ImprovedLeanPRDSchema) => void;
 }
 
 export interface LearningJournalToggleProps {
