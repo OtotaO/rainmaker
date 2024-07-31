@@ -1,16 +1,19 @@
-// START: [04-LRNAI-FE-2.1, 04-LRNAI-FE-2.2]
-import type React from 'react';
+import type React from 'react'
 import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../@/components/ui/card';
+import { Textarea } from '../../@/components/ui/textarea';
+import { Button } from '../../@/components/ui/button';
+import { BookOpen, RefreshCw } from 'lucide-react';
 import { z } from 'zod';
 
-export const PlannedAdjustmentSchema = z.object({
+// Zod schemas
+const PlannedAdjustmentSchema = z.object({
   id: z.string(),
   reasoningForAdjustment: z.string(),
   adjustmentDescription: z.string(),
 });
 
-
-export const LearningJournalEntrySchema = z.object({
+const LearningJournalEntrySchema = z.object({
   id: z.string(),
   timestamp: z.string().datetime(),
   userAction: z.string(),
@@ -20,27 +23,20 @@ export const LearningJournalEntrySchema = z.object({
   plannedAdjustments: z.array(PlannedAdjustmentSchema),
 });
 
-export const AIAssistanceLevelSchema = z.object({
+const AIAssistanceLevelSchema = z.object({
   level: z.number().int().min(1).max(4),
   explanation: z.string(),
 });
 
-export const LearningJournalEntryRequestSchema = LearningJournalEntrySchema.omit({
+const LearningJournalEntryRequestSchema = LearningJournalEntrySchema.omit({
   id: true,
   timestamp: true,
 });
 
-export const LearningJournalEntriesResponseSchema = z.array(LearningJournalEntrySchema);
-
-export const AIAssistanceLevelResponseSchema = AIAssistanceLevelSchema;
-
-export type LearningJournalEntry = z.infer<typeof LearningJournalEntrySchema>;
-export type AIAssistanceLevel = z.infer<typeof AIAssistanceLevelSchema>;
-export type LearningJournalEntryRequest = z.infer<typeof LearningJournalEntryRequestSchema>;
-export type LearningJournalEntriesResponse = z.infer<typeof LearningJournalEntriesResponseSchema>;
-export type AIAssistanceLevelResponse = z.infer<typeof AIAssistanceLevelResponseSchema>;
-// END: [04-LRNAI-SH-3.1] [double check: This implementation defines Zod schemas for all required types and exports both the schemas and inferred types. It provides strong typing and validation for our learning journal and AI assistance level data structures.]
-
+// Types
+type LearningJournalEntry = z.infer<typeof LearningJournalEntrySchema>;
+type AIAssistanceLevel = z.infer<typeof AIAssistanceLevelSchema>;
+type LearningJournalEntryRequest = z.infer<typeof LearningJournalEntryRequestSchema>;
 
 interface LearningJournalComponentProps {
   onEntryAdded: () => void;
@@ -48,10 +44,11 @@ interface LearningJournalComponentProps {
 
 export const LearningJournalComponent: React.FC<LearningJournalComponentProps> = ({ onEntryAdded }) => {
   const [entries, setEntries] = useState<LearningJournalEntry[]>([]);
-  const [newEntry, setNewEntry] = useState<Partial<LearningJournalEntry>>({});
+  const [newEntry, setNewEntry] = useState<Partial<LearningJournalEntryRequest>>({});
   const [assistanceLevel, setAssistanceLevel] = useState<AIAssistanceLevel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchEntries();
@@ -59,6 +56,7 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
   }, []);
 
   const fetchEntries = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch('http://localhost:3001/api/learning-journal/entries');
       if (!response.ok) throw new Error('Failed to fetch entries');
@@ -66,6 +64,8 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
       setEntries(data);
     } catch (error) {
       setError('Failed to load journal entries. Please try again later.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -80,9 +80,8 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewEntry({ ...newEntry, [e.target.name]: e.target.value });
-    // Clear validation error for this field when user starts typing
     setValidationErrors(prev => ({ ...prev, [e.target.name]: [] }));
   };
 
@@ -92,7 +91,6 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
     setValidationErrors({});
 
     try {
-      // Validate the new entry using Zod schema
       LearningJournalEntryRequestSchema.parse(newEntry);
 
       const response = await fetch('http://localhost:3001/api/learning-journal/entry', {
@@ -104,7 +102,6 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
       if (!response.ok) {
         const errorData = await response.json();
         if (errorData.error === 'Invalid entry format' && errorData.details) {
-          // Handle Zod validation errors from the server
           const zodErrors: z.ZodError = errorData.details;
           const formattedErrors: Record<string, string[]> = {};
           for (const err of zodErrors.errors) {
@@ -126,7 +123,6 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        // Handle client-side Zod validation errors
         const formattedErrors: Record<string, string[]> = {};
         for (const err of error.errors) {
           const field = err.path.join('.');
@@ -143,93 +139,137 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
   };
 
   return (
-    <div className="learning-journal">
-      <h2>Learning Journal</h2>
-      {error && <div className="error">{error}</div>}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="userAction">User Action:</label>
-          <input
-            id="userAction"
-            type="text"
-            name="userAction"
-            value={newEntry.userAction || ''}
-            onChange={handleInputChange}
-            required
-          />
-          {validationErrors.userAction && (
-            <div className="validation-error">{validationErrors.userAction.join(', ')}</div>
-          )}
-        </div>
-        <div>
-          <label htmlFor="details">Details:</label>
-          <textarea
-            id="details"
-            name="details"
-            value={newEntry.details || ''}
-            onChange={handleInputChange}
-            required
-          />
-          {validationErrors.details && (
-            <div className="validation-error">{validationErrors.details.join(', ')}</div>
-          )}
-        </div>
-        <div>
-          <label htmlFor="selfReflectionOnCurrentDetails">Self Reflection on Current Details:</label>
-          <textarea
-            id="selfReflectionOnCurrentDetails"
-            name="selfReflectionOnCurrentDetails"
-            value={newEntry.selfReflectionOnCurrentDetails || ''}
-            onChange={handleInputChange}
-            required
-          />
-          {validationErrors.selfReflectionOnCurrentDetails && (
-            <div className="validation-error">{validationErrors.selfReflectionOnCurrentDetails.join(', ')}</div>
-          )}
-        </div>
-        <div>
-          <label htmlFor="globalSelfReflectionOnEntireJournalSoFar">Global Self Reflection on Entire Journal So Far:</label>
-          <textarea
-            id="globalSelfReflectionOnEntireJournalSoFar"
-            name="globalSelfReflectionOnEntireJournalSoFar"
-            value={newEntry.globalSelfReflectionOnEntireJournalSoFar || ''}
-            onChange={handleInputChange}
-            required
-          />
-          {validationErrors.globalSelfReflectionOnEntireJournalSoFar && (
-            <div className="validation-error">{validationErrors.globalSelfReflectionOnEntireJournalSoFar.join(', ')}</div>
-          )}
-        </div>
-        <button type="submit">Add Entry</button>
-      </form>
-      <div className="entries">
-        <h3>Recent Entries</h3>
-        {entries.map(entry => (
-          <div key={entry.id} className="entry">
-            <p><strong>Timestamp:</strong> {new Date(entry.timestamp).toLocaleString()}</p>
-            <p><strong>User Action:</strong> {entry.userAction}</p>
-            <p><strong>Details:</strong> {entry.details}</p>
-          </div>
-        ))}
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Learning Journal</h1>
+        <Button onClick={fetchEntries} disabled={isLoading}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Refresh Entries
+        </Button>
       </div>
-      <AIAssistanceLevelIndicator assistanceLevel={assistanceLevel} />
+      <div className="flex flex-col md:flex-row gap-8">
+        <div className="w-full md:w-1/2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BookOpen className="mr-2" />
+                Recent Entries
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <p>Loading entries...</p>
+              ) : entries.length > 0 ? (
+                <div className="space-y-4">
+                  {entries.map(entry => (
+                    <Card key={entry.id}>
+                      <CardContent>
+                        <p className="font-semibold">{new Date(entry.timestamp).toLocaleString()}</p>
+                        <p><strong>User Action:</strong> {entry.userAction}</p>
+                        <p><strong>Details:</strong> {entry.details}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p>No entries found.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        <div className="w-full md:w-1/2">
+          <Card>
+            <CardHeader>
+              <CardTitle>New Journal Entry</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="userAction" className="block text-sm font-medium text-gray-700">User Action:</label>
+                  <Textarea
+                    id="userAction"
+                    name="userAction"
+                    value={newEntry.userAction || ''}
+                    onChange={handleInputChange}
+                    className="mt-1"
+                    required
+                  />
+                  {validationErrors.userAction && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.userAction.join(', ')}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="details" className="block text-sm font-medium text-gray-700">Details:</label>
+                  <Textarea
+                    id="details"
+                    name="details"
+                    value={newEntry.details || ''}
+                    onChange={handleInputChange}
+                    className="mt-1"
+                    required
+                  />
+                  {validationErrors.details && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.details.join(', ')}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="selfReflectionOnCurrentDetails" className="block text-sm font-medium text-gray-700">Self Reflection on Current Details:</label>
+                  <Textarea
+                    id="selfReflectionOnCurrentDetails"
+                    name="selfReflectionOnCurrentDetails"
+                    value={newEntry.selfReflectionOnCurrentDetails || ''}
+                    onChange={handleInputChange}
+                    className="mt-1"
+                    required
+                  />
+                  {validationErrors.selfReflectionOnCurrentDetails && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.selfReflectionOnCurrentDetails.join(', ')}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="globalSelfReflectionOnEntireJournalSoFar" className="block text-sm font-medium text-gray-700">Global Self Reflection on Entire Journal So Far:</label>
+                  <Textarea
+                    id="globalSelfReflectionOnEntireJournalSoFar"
+                    name="globalSelfReflectionOnEntireJournalSoFar"
+                    value={newEntry.globalSelfReflectionOnEntireJournalSoFar || ''}
+                    onChange={handleInputChange}
+                    className="mt-1"
+                    required
+                  />
+                  {validationErrors.globalSelfReflectionOnEntireJournalSoFar && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.globalSelfReflectionOnEntireJournalSoFar.join(', ')}</p>
+                  )}
+                </div>
+                <Button type="submit">Add Entry</Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>AI Assistance Level</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {assistanceLevel ? (
+            <>
+              <p><strong>Level:</strong> {assistanceLevel.level}</p>
+              <p><strong>Explanation:</strong> {assistanceLevel.explanation}</p>
+            </>
+          ) : (
+            <p>Loading AI Assistance Level...</p>
+          )}
+        </CardContent>
+      </Card>
+      {error && (
+        <Card className="mt-4 bg-red-100">
+          <CardContent>
+            <p className="text-red-600">{error}</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
 
-interface AIAssistanceLevelIndicatorProps {
-  assistanceLevel: AIAssistanceLevel | null;
-}
-
-export const AIAssistanceLevelIndicator: React.FC<AIAssistanceLevelIndicatorProps> = ({ assistanceLevel }) => {
-  if (!assistanceLevel) return null;
-
-  return (
-    <div className="ai-assistance-level">
-      <h3>AI Assistance Level</h3>
-      <p><strong>Level:</strong> {assistanceLevel.level}</p>
-      <p><strong>Explanation:</strong> {assistanceLevel.explanation}</p>
-    </div>
-  );
-};
-// END: [04-LRNAI-FE-2.1, 04-LRNAI-FE-2.2] [double check: This implementation updates the frontend components to handle Zod validation errors from both client-side and server-side validation. It provides specific error messages for each field, improving the user experience. The code is complete and aligns with the project's requirements, now including proper handling of Zod validation errors.]
+export default LearningJournalComponent;

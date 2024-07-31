@@ -11,6 +11,7 @@ import {
 } from '../../shared/src/types';
 
 import { fetchOpenIssues } from './github';
+// import { epicTaskBreakdown } from './refinement/epicTaskBreakdown';
 
 const app = new Hono();
 
@@ -81,7 +82,10 @@ try {
       return c.json({ message: 'Entry added successfully' }, 201);
     } catch (error) {
       if ((error as z.ZodError).name === 'ZodError') {
-        return c.json({ error: 'Invalid entry format', details: error.errors }, 400);
+        return c.json(
+          { error: 'Invalid entry format', details: (error as z.ZodError).errors },
+          400
+        );
       }
 
       console.error('Error adding journal entry:', error);
@@ -100,6 +104,15 @@ try {
     }
   });
 
+  // app.get('/api/prd-suggestions-to-prd', async (c) => {
+  //   const result = await prd
+  // })
+
+  // app.get('/api/epic-task-breakdown', async (c) => {
+  //   const result = await epicTaskBreakdown() .getEpicTaskBreakdown();
+  //   return c.json(result);
+  // });
+
   app.get('/api/ai-assistance-level', async (c) => {
     try {
       const assistanceLevel = await learningJournalService.calculateAIAssistanceLevel();
@@ -115,7 +128,7 @@ try {
   });
 
   app.get('/api/github/issues', async (c) => {
-    const issues = await fetchOpenIssues('unscene-inc', 'Scene');
+    const issues = await fetchOpenIssues('f8n-ai', 'structure');
     return c.json(issues);
   });
 } catch (error) {

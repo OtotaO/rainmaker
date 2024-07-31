@@ -32,7 +32,7 @@ from idea to code in under an hour.
 
 1. Clone the repository:
    ```
-   gh repo clone unscene-inc rainmaker
+   gh repo clone f8n-ai rainmaker
    cd rainmaker
    ```
 
@@ -48,7 +48,7 @@ from idea to code in under an hour.
      ```
      ANTHROPIC_API_KEY=your_anthropic_api_key_here
      GITHUB_TOKEN=your_github_personal_access_token_here
-     GITHUB_OWNER=unscene-inc
+     GITHUB_OWNER=f8n-ai
      GITHUB_REPO=rainmaker
      ```
 

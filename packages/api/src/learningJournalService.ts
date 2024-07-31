@@ -19,7 +19,7 @@ const anthropic: Anthropic = createLLMClient({
 
 const instructor = Instructor<typeof anthropic>({
   client: anthropic,
-  mode: 'JSON_SCHEMA',
+  mode: 'JSON',
 });
 
 export class LearningJournalService {

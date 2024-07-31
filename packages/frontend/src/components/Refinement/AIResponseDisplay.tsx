@@ -1,11 +1,13 @@
 // START: [04-LRNAI-FE-2.2]
-import React from 'react';
+import type React from 'react';
+
+import rehypeSanitize from 'rehype-sanitize';
 import { motion } from 'framer-motion';
 import { BrainCircuitIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
-import { AIResponseDisplayProps } from './types';
+
+import type { AIResponseDisplayProps } from '../types';
 
 export const AIResponseDisplay: React.FC<AIResponseDisplayProps> = ({ step, response, onEdit }) => (
   <motion.div

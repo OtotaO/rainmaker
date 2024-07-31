@@ -1,6 +1,6 @@
 // START: [04-LRNAI-FE-2.1]
-import React from 'react';
-import { LearningJournalToggleProps } from './types';
+import type React from 'react';
+import type { LearningJournalToggleProps } from '../types';
 
 export const LearningJournalToggle: React.FC<LearningJournalToggleProps> = ({
   showLearningJournal,
