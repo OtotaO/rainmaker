@@ -12,49 +12,49 @@ export const LeanPRDSchema = z.object({
   coreFeatureDefinition: z
     .object({
       id: z.literal('01-CORE'),
-      appliedCritiqueIds: z.array(z.string()),
+      appliedCritiqueIds: z.array(z.string()).optional(),
       content: z.string().max(300),
     })
     .describe('A concise 1-2 sentence definition of the core feature'),
   businessObjective: z
     .object({
       id: z.literal('02-BOBJ'),
-      appliedCritiqueIds: z.array(z.string()),
+      appliedCritiqueIds: z.array(z.string()).optional(),
       content: z.string().max(300),
     })
     .describe('The main business goal this feature aims to achieve'),
   keyUserStory: z
     .object({
       id: z.literal('03-USER'),
-      appliedCritiqueIds: z.array(z.string()),
-      content: z.string().max(300),
+      appliedCritiqueIds: z.array(z.string()).optional(),
+      content: z.string(),
     })
     .describe('The primary user story this feature addresses'),
   userRequirements: z
     .array(
       z.object({
         id: z.string(),
-        appliedCritiqueIds: z.array(z.string()),
+        appliedCritiqueIds: z.array(z.string()).optional(),
         content: z.string(),
       })
     )
     .max(8)
     .describe('Essential user-facing requirements and functionality'),
-  acceptanceCriteria: z
-    .array(
-      z.object({
-        id: z.string(),
-        appliedCritiqueIds: z.array(z.string()),
-        content: z.string(),
-      })
-    )
-    .max(8)
-    .describe('Specific, measurable criteria to consider the feature complete'),
+  // acceptanceCriteria: z
+  //   .array(
+  //     z.object({
+  //       id: z.string(),
+  //       appliedCritiqueIds: z.array(z.string()),
+  //       content: z.string(),
+  //     })
+  //   )
+  //   .max(8)
+  //   .describe('Specific, measurable criteria to consider the feature complete'),
   successMetrics: z
     .array(
       z.object({
         id: z.string(),
-        appliedCritiqueIds: z.array(z.string()),
+        appliedCritiqueIds: z.array(z.string()).optional(),
         content: z.string(),
       })
     )
@@ -64,7 +64,7 @@ export const LeanPRDSchema = z.object({
     .array(
       z.object({
         id: z.string(),
-        appliedCritiqueIds: z.array(z.string()),
+        appliedCritiqueIds: z.array(z.string()).optional(),
         content: z.string(),
       })
     )
@@ -74,22 +74,22 @@ export const LeanPRDSchema = z.object({
     .array(
       z.object({
         id: z.string(),
-        appliedCritiqueIds: z.array(z.string()),
+        appliedCritiqueIds: z.array(z.string()).optional(),
         content: z.string(),
       })
     )
     .max(4)
     .describe('Potential risks or challenges associated with the feature'),
-  futureConsiderations: z
-    .array(
-      z.object({
-        id: z.string(),
-        appliedCritiqueIds: z.array(z.string()),
-        content: z.string(),
-      })
-    )
-    .max(4)
-    .describe('High-level ideas or goals for future iterations after MVP'),
+  // futureConsiderations: z
+  //   .array(
+  //     z.object({
+  //       id: z.string(),
+  //       appliedCritiqueIds: z.array(z.string()),
+  //       content: z.string(),
+  //     })
+  //   )
+  //   .max(4)
+  //   .describe('High-level ideas or goals for future iterations after MVP'),
 });
 
 export type LeanPRDSchema = z.infer<typeof LeanPRDSchema>;
@@ -98,18 +98,9 @@ export const FlexibleLeanPRDSchema = createFlexibleSchema(LeanPRDSchema);
 export type FlexibleLeanPRDSchema = FlexibleSchema<typeof LeanPRDSchema.shape>;
 
 export const FeatureInputSchema = z.object({
-  improvedDescription: z
-    .string()
-    .min(1, 'Improved description is required')
-    .max(500, 'Improved description must not exceed 500 characters'),
-  successMetric: z
-    .string()
-    .min(1, 'Success metric is required')
-    .max(200, 'Success metric must not exceed 200 characters'),
-  criticalRisk: z
-    .string()
-    .min(1, 'Critical risk is required')
-    .max(200, 'Critical risk must not exceed 200 characters'),
+  improvedDescription: z.string().min(1, 'Improved description is required'),
+  successMetric: z.string().min(1, 'Success metric is required'),
+  criticalRisk: z.string().min(1, 'Critical risk is required'),
 });
 
 export type FeatureInputSchema = z.infer<typeof FeatureInputSchema>;

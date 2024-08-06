@@ -1,21 +1,19 @@
-// START: [04-LRNAI-FE-2.1, 04-LRNAI-FE-2.2]
-import type React from 'react';
+// ./packages/frontend/src/components/Refinement/PRDQuestionFlow.tsx
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckIcon, ArrowRightIcon } from 'lucide-react';
-import { PRD_QUESTIONS } from '../PRDGenerator';
 import { useAutoResizeTextArea } from './hooks';
 import { AIResponseDisplay } from './AIResponseDisplay';
-import type { PRDQuestionFlowProps } from '../types';
+import { usePRDQuestionFlow } from './usePRDQuestionFlow';
+import type { ImprovedLeanPRDSchema } from '../../../../shared/src/types';
 
-export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({
-  currentStep,
-  responses,
-  aiResponses,
-  isLoading,
-  onSubmit,
-  onEdit,
-}) => {
-  const textareaRef = useAutoResizeTextArea(responses[currentStep] || '');
+export interface PRDQuestionFlowProps {
+  onComplete: (prd: ImprovedLeanPRDSchema) => void;
+}
+
+export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({ onComplete }) => {
+  const { currentStep, responses, aiResponses, isLoading, handleSubmit, handleEdit, PRD_QUESTIONS } = usePRDQuestionFlow(onComplete);
+  const textareaRef = useAutoResizeTextArea(responses[PRD_QUESTIONS[currentStep].id] || '');
 
   return (
     <>
@@ -59,9 +57,10 @@ export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({
         </motion.div>
       </div>
 
+      {/* Display AI Responses */}
       <AnimatePresence>
         {Object.entries(aiResponses).map(([step, response]) => (
-          <AIResponseDisplay key={step} step={step} response={response} onEdit={onEdit} />
+          <AIResponseDisplay key={step} step={step} response={response} onEdit={handleEdit} />
         ))}
       </AnimatePresence>
 
@@ -77,7 +76,7 @@ export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({
               className="mb-8"
             >
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">{question.text}</h2>
-              <form onSubmit={onSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="relative">
                   <textarea
                     ref={textareaRef}
@@ -85,7 +84,7 @@ export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({
                     className="w-full p-4 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 pr-12 resize-none"
                     rows={3}
                     required
-                    defaultValue={responses[index] || ''}
+                    defaultValue={responses[question.id] || ''}
                     placeholder="Type your answer here..."
                   />
                   <ArrowRightIcon className="absolute right-4 bottom-4 w-6 h-6 text-gray-400" />
@@ -117,4 +116,3 @@ export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({
     </>
   );
 };
-// END: [04-LRNAI-FE-2.1, 04-LRNAI-FE-2.2]

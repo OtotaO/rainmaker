@@ -1,3 +1,4 @@
+// ./packages/frontend/src/components/Refinement/FinalizedPRDDisplay.tsx
 import React, { useState, useCallback } from 'react';
 import { ScrollArea } from "../../@/components/ui/scroll-area";
 import { Button } from "../../@/components/ui/button";
@@ -15,11 +16,11 @@ const sectionIcons = {
   BusinessObjective: <Zap className="w-4 h-4" />,
   KeyUserStory: <CheckSquare className="w-4 h-4" />,
   UserRequirements: <CheckSquare className="w-4 h-4" />,
-  AcceptanceCriteria: <CheckSquare className="w-4 h-4" />,
+  // AcceptanceCriteria: <CheckSquare className="w-4 h-4" />,
   SuccessMetrics: <Zap className="w-4 h-4" />,
   Constraints: <AlertTriangle className="w-4 h-4" />,
   KnownRisks: <AlertTriangle className="w-4 h-4" />,
-  FutureConsiderations: <Calendar className="w-4 h-4" />,
+  // FutureConsiderations: <Calendar className="w-4 h-4" />,
 };
 
 export const FinalizedPRDDisplay: React.FC<FinalizedPRDDisplayProps> = ({ finalizedPRD, onPRDUpdate }) => {
@@ -91,6 +92,14 @@ export const FinalizedPRDDisplay: React.FC<FinalizedPRDDisplayProps> = ({ finali
       reader.readAsText(file);
     }
   }, [onPRDUpdate]);
+
+  // Conditional rendering based on finalizedPRD
+  if (!finalizedPRD) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <p>Loading product details...</p> </div>
+    );
+  }
 
   return (
     <div className="flex h-screen">

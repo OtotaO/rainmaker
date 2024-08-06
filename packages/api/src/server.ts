@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { streamSSE } from 'hono/streaming';
 import type { z } from 'zod';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { LearningJournalService } from './learningJournalService';
@@ -26,52 +25,26 @@ try {
   app.post('/api/anthropic', async (c) => {
     const body = (await c.req.json()) as Anthropic.MessageCreateParams;
 
-    return streamSSE(c, async (stream) => {
-      try {
-        const response = await anthropic.messages.create({
-          ...body,
-          stream: true,
-        });
+    try {
+      console.log('sending this data:', {
+        ...body,
+        model: 'claude-3-5-sonnet-20240620',
+        stream: true,
+        max_tokens: 1000,
+      });
 
-        for await (const chunk of response) {
-          switch (chunk.type) {
-            case 'message_start':
-              await stream.writeSSE({
-                event: 'message_start',
-                data: JSON.stringify(chunk.message),
-              });
-              break;
-            case 'content_block_start':
-              await stream.writeSSE({
-                event: 'content_block_start',
-                data: JSON.stringify(chunk.content_block),
-              });
-              break;
-            case 'content_block_delta':
-              await stream.writeSSE({
-                event: 'content_block_delta',
-                data: JSON.stringify(chunk.delta),
-              });
-              break;
-            case 'content_block_stop':
-              await stream.writeSSE({ event: 'content_block_stop', data: JSON.stringify({}) });
-              break;
-            case 'message_delta':
-              await stream.writeSSE({ event: 'message_delta', data: JSON.stringify(chunk.delta) });
-              break;
-            case 'message_stop':
-              await stream.writeSSE({ event: 'message_stop', data: JSON.stringify({}) });
-              break;
-          }
-        }
-      } catch (error) {
-        console.error('Error in SSE stream:', error);
-        await stream.writeSSE({
-          event: 'error',
-          data: JSON.stringify({ error: 'An error occurred during processing' }),
-        });
-      }
-    });
+      const response = (await anthropic.messages.create({
+        ...body,
+        model: 'claude-3-5-sonnet-20240620',
+        max_tokens: 1000,
+        stream: false,
+      })) as { content: Anthropic.Messages.TextBlock[] };
+
+      return c.json({ message: response.content[0].text });
+    } catch (error) {
+      console.error('Error streaming response:', error);
+      return c.json({ error: 'Failed to stream response. Please try again later.' }, 500);
+    }
   });
 
   app.post('/api/learning-journal/entry', async (c) => {
@@ -107,10 +80,12 @@ try {
   app.post('/api/prd-suggestions-to-lean-prd', async (c) => {
     const body = await c.req.json();
 
+    console.log('body:', body);
+
     const result = await generateLeanPRD({
-      improvedDescription: body.improvedDescription,
-      successMetric: body.successMetric,
-      criticalRisk: body.criticalRisk,
+      improvedDescription: body[0],
+      successMetric: body[1],
+      criticalRisk: body[2],
     });
 
     return c.json(result);

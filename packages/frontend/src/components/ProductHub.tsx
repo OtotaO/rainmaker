@@ -1,3 +1,4 @@
+// ./packages/frontend/src/components/ProductHub.tsx
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "../@/components/ui/card";
 import { Button } from "../@/components/ui/button";
@@ -5,18 +6,25 @@ import { ScrollArea } from "../@/components/ui/scroll-area";
 import { GitHubLogoIcon, LightningBoltIcon, FileTextIcon, UploadIcon } from "@radix-ui/react-icons";
 import { BookOpenIcon, RefreshCwIcon } from 'lucide-react';
 import { motion } from "framer-motion";
-import { PRDGenerator } from './PRDGenerator';
 import { FinalizedPRDDisplay } from './Refinement/FinalizedPRDDisplay';
 import { LearningJournalComponent } from './Refinement/LearningJournalComponent';
-import type { GitHubIssue, ImprovedLeanPRDSchema } from '../../../shared/src/types';
+import { PRDQuestionFlow } from './Refinement/PRDQuestionFlow';
+import type { GitHubIssue, ImprovedLeanPRDSchema, LeanPRDSchema } from '../../../shared/src/types';
+
+// Define Workflow Constants
+const WORKFLOW_GITHUB_ISSUE = 'github_issue';
+const WORKFLOW_PRD_QUESTION_FLOW = 'prd_question_flow';
+const WORKFLOW_PRD_CREATION_EDITING = 'prd_creation_editing';
 
 const ProductHub: React.FC = () => {
-  const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null);
   const [showLearningJournal, setShowLearningJournal] = useState(false);
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
   const [selectedIssue, setSelectedIssue] = useState<GitHubIssue | null>(null);
-  const [finalizedPRD, setFinalizedPRD] = useState<ImprovedLeanPRDSchema | null>(null);
+  const [finalizedPRD, setFinalizedPRD] = useState<LeanPRDSchema | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Introduce a Single Workflow State
+  const [activeWorkflow, setActiveWorkflow] = useState<string | null>(null);
 
   const fetchIssues = async () => {
     try {
@@ -48,7 +56,8 @@ const ProductHub: React.FC = () => {
         try {
           const json = JSON.parse(event.target?.result as string);
           setFinalizedPRD(json);
-          setSelectedWorkflow('prd');
+          // Update onClick Handler
+          setActiveWorkflow(WORKFLOW_PRD_CREATION_EDITING);
         } catch (error) {
           console.error('Error parsing JSON:', error);
           alert('Invalid JSON file. Please try again.');
@@ -60,7 +69,7 @@ const ProductHub: React.FC = () => {
 
   const renderWorkflowSelection = () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSelectedWorkflow('github')}>
+      <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveWorkflow(WORKFLOW_GITHUB_ISSUE)}>
         <CardHeader>
           <CardTitle className="flex items-center">
             <GitHubLogoIcon className="mr-2" />
@@ -72,7 +81,7 @@ const ProductHub: React.FC = () => {
           <Button className="mt-4">Start</Button>
         </CardContent>
       </Card>
-      <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSelectedWorkflow('feature')}>
+      <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveWorkflow(WORKFLOW_PRD_QUESTION_FLOW)}>
         <CardHeader>
           <CardTitle className="flex items-center">
             <LightningBoltIcon className="mr-2" />
@@ -84,7 +93,7 @@ const ProductHub: React.FC = () => {
           <Button className="mt-4">Start</Button>
         </CardContent>
       </Card>
-      <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSelectedWorkflow('prd')}>
+      <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveWorkflow(WORKFLOW_PRD_CREATION_EDITING)}>
         <CardHeader>
           <CardTitle className="flex items-center">
             <FileTextIcon className="mr-2" />
@@ -99,39 +108,11 @@ const ProductHub: React.FC = () => {
     </div>
   );
 
-  const renderSelectedWorkflow = () => {
-    switch (selectedWorkflow) {
-      case 'github':
-        return (
-          <div>
-            <h2 className="text-xl font-bold mb-4">Select a GitHub Issue</h2>
-            <ScrollArea className="h-[60vh]">
-              {issues.map((issue) => (
-                <Card key={issue.id} className="mb-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedIssue(issue)}>
-                  <CardHeader>
-                    <CardTitle>{issue.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="truncate">{issue.body}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </ScrollArea>
-          </div>
-        );
-      case 'feature':
-      case 'prd':
-        return <FinalizedPRDDisplay finalizedPRD={finalizedPRD as ImprovedLeanPRDSchema} />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-8">
       <div className="max-w-6xl mx-auto">
         <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-indigo-600">AI Product Team</h1>
+          <h1 className="text-4xl font-bold text-indigo-600">Product CoPilot</h1>
         </header>
 
         <div className="flex justify-between mb-6">
@@ -152,8 +133,36 @@ const ProductHub: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {!selectedWorkflow && !finalizedPRD ? renderWorkflowSelection() : renderSelectedWorkflow()}
-          {finalizedPRD && <FinalizedPRDDisplay finalizedPRD={finalizedPRD} onPRDUpdate={setFinalizedPRD} />}
+          {/* Conditionally render workflows based on state variables */}
+          {activeWorkflow === null && renderWorkflowSelection()}
+          {activeWorkflow !== null && (
+            <div>
+              {/* Render PRDQuestionFlow with onComplete callback */}
+              {activeWorkflow === WORKFLOW_PRD_QUESTION_FLOW && <PRDQuestionFlow onComplete={(prd) => {
+                setFinalizedPRD(prd)
+                setActiveWorkflow(WORKFLOW_PRD_CREATION_EDITING)
+              }} />}
+
+              {activeWorkflow === WORKFLOW_GITHUB_ISSUE && (
+                <div>
+                  <h2 className="text-xl font-bold mb-4">Select a GitHub Issue</h2>
+                  <ScrollArea className="h-[60vh]">
+                    {issues.map((issue) => (
+                      <Card key={issue.id} className="mb-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedIssue(issue)}>
+                        <CardHeader>
+                          <CardTitle>{issue.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="truncate">{issue.body}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </ScrollArea>
+                </div>
+              )}
+              {activeWorkflow === WORKFLOW_PRD_CREATION_EDITING && finalizedPRD && <FinalizedPRDDisplay finalizedPRD={finalizedPRD} onPRDUpdate={setFinalizedPRD} />}
+            </div>
+          )}
         </motion.div>
 
         {/* Drag and drop area for JSON files */}

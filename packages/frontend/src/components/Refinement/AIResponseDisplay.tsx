@@ -7,7 +7,11 @@ import { BrainCircuitIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 
-import type { AIResponseDisplayProps } from '../types';
+export interface AIResponseDisplayProps {
+  step: string;
+  response: string;
+  onEdit: (step: number) => void;
+}
 
 export const AIResponseDisplay: React.FC<AIResponseDisplayProps> = ({ step, response, onEdit }) => (
   <motion.div

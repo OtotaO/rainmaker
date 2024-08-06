@@ -23,38 +23,48 @@ export const generateLeanPRD = async (
 ): Promise<FlexibleLeanPRDSchema> => {
   let retries = 0;
 
+  console.log('input for generating lean PRD:', input);
+
   while (retries < maxRetries) {
     try {
-      logger.info('Generating lean PRD', { input, attempt: retries + 1 });
-
       // Validate and sanitize input
-      const sanitizedInput = {
-        improvedDescription: sanitizeInput(input.improvedDescription),
-        successMetric: sanitizeInput(input.successMetric),
-        criticalRisk: sanitizeInput(input.criticalRisk),
-      };
+      // const sanitizedInput = {
+      //   improvedDescription: sanitizeInput(input.improvedDescription),
+      //   successMetric: sanitizeInput(input.successMetric),
+      //   criticalRisk: sanitizeInput(input.criticalRisk),
+      // };
 
-      const validatedInput = FeatureInputSchema.parse(sanitizedInput);
+      // const validatedInput = FeatureInputSchema.parse(sanitizedInput);
 
       const result = await Promise.race([
         instructor.chat.completions.create({
           model: 'claude-3-5-sonnet-20240620',
-          max_tokens: 2000,
+          max_tokens: 3000,
           messages: [
             {
               role: 'user',
-              content: `Generate a lean PRD for an MVP feature based on the following input:
+              content: `
+Generate a lean PRD for an MVP feature based on the following input:
 
-              Improved Feature Description: ${validatedInput.improvedDescription}
-              Success Metric: ${validatedInput.successMetric}
-              Critical Risk: ${validatedInput.criticalRisk}
+<feature-description-analysis>
+${input.improvedDescription}
+</feature-description-analysis>
 
-              Focus on essential information needed for AI implementation. Be concise and specific.`,
+<success-metric-analysis>
+${input.successMetric}
+</success-metric-analysis>
+
+<critical-risk-analysis>
+${input.criticalRisk}
+</critical-risk-analysis>
+
+Focus on essential information needed for AI implementation. Be concise and specific.
+`,
             },
           ],
           response_model: {
-            name: 'FlexibleLeanPRDSchema',
-            schema: FlexibleLeanPRDSchema,
+            name: 'LeanPRDSchema',
+            schema: LeanPRDSchema,
           },
         }),
         new Promise((_, reject) =>
@@ -75,6 +85,7 @@ export const generateLeanPRD = async (
       });
 
       logger.info('initial PRD:', { validatedResult });
+      // return validatedResult;
       logger.info('going ahead to auto-PRD review phase');
       const prdReview = await reviewLeanPRD(validatedResult as LeanPRDSchema);
       const improvedPRD = await generateImprovedLeanPRD({

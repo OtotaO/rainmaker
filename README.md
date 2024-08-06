@@ -1,4 +1,4 @@
-# Rainmaker - AI Product Team
+# Rainmaker - Product CoPilot
 
 Rainmaker is an internal tool that accelerates feature development
 from idea to code in under an hour.

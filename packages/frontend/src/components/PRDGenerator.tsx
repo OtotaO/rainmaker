@@ -113,7 +113,7 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center relative mb-8">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
-              AI Product Team
+              Product CoPilot
             </span>
             <SparklesIcon className="absolute -top-6 -left-6 w-8 h-8 text-yellow-400" />
           </CardTitle>
