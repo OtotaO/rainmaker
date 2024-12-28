@@ -180,3 +180,13 @@ export const ImprovedLeanPRDSchema = z.object({
 });
 
 export type ImprovedLeanPRDSchema = z.infer<typeof ImprovedLeanPRDSchema>;
+
+export const ProductHighLevelDescriptionSchema = z.object({
+  id: z.string().min(1).describe('The unique identifier for the product high level description'),
+  name: z.string().min(1).describe('The name of the product'),
+  description: z.string().min(50).describe('A high level mini narrative document that describes the product, its purpose, core functionality, and any other information that would be most useful to provide as context when iteratively writing up a PRD for a new feature'),
+  createdAt: z.string().datetime().describe('The date and time the product high level description was created'),
+  updatedAt: z.string().datetime().describe('The date and time the product high level description was last updated'),
+});
+
+export type ProductHighLevelDescriptionSchema = z.infer<typeof ProductHighLevelDescriptionSchema>;

@@ -38,7 +38,7 @@ export const generateLeanPRD = async (
 
       const result = await Promise.race([
         instructor.chat.completions.create({
-          model: 'claude-3-5-sonnet-20240620',
+          model: 'claude-3-5-sonnet-latest',
           max_tokens: 3000,
           messages: [
             {
@@ -131,7 +131,7 @@ export const generateImprovedLeanPRD = async (
 
       const result = await Promise.race([
         instructor.chat.completions.create({
-          model: 'claude-3-5-sonnet-20240620',
+          model: 'claude-3-5-sonnet-latest',
           max_tokens: 2000,
           messages: [
             {

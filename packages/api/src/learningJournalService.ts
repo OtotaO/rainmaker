@@ -13,8 +13,8 @@ import { instructor } from './lib/instructor';
 export class LearningJournalService {
   private prisma: PrismaClient;
 
-  constructor() {
-    this.prisma = new PrismaClient();
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
   }
 
   async addEntry(entry: LearningJournalEntryRequest): Promise<void> {

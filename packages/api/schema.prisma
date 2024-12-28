@@ -9,6 +9,13 @@ datasource db {
   url      = "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 }
 
+model ProductHighLevelDescription {
+  id String @id @default(uuid())
+  name String
+  description String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
 model LearningJournalEntry {
   id                                     String              @id @default(uuid())
@@ -19,7 +26,6 @@ model LearningJournalEntry {
   globalSelfReflectionOnEntireJournalSoFar String
   plannedAdjustments                     PlannedAdjustment[]
 }
-
 
 model PlannedAdjustment {
   id                     String              @id @default(uuid())

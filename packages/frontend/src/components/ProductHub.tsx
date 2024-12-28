@@ -9,7 +9,8 @@ import { motion } from "framer-motion";
 import { FinalizedPRDDisplay } from './Refinement/FinalizedPRDDisplay';
 import { LearningJournalComponent } from './Refinement/LearningJournalComponent';
 import { PRDQuestionFlow } from './Refinement/PRDQuestionFlow';
-import type { GitHubIssue, ImprovedLeanPRDSchema, LeanPRDSchema } from '../../../shared/src/types';
+import type { GitHubIssue, ImprovedLeanPRDSchema, LeanPRDSchema, ProductHighLevelDescriptionSchema } from '../../../shared/src/types';
+import { ProductHighLevelDescription } from './ProductHighLevelDescription';
 
 // Define Workflow Constants
 const WORKFLOW_GITHUB_ISSUE = 'github_issue';
@@ -22,7 +23,7 @@ const ProductHub: React.FC = () => {
   const [selectedIssue, setSelectedIssue] = useState<GitHubIssue | null>(null);
   const [finalizedPRD, setFinalizedPRD] = useState<LeanPRDSchema | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-
+  const [activeProductHighLevelDescription, setActiveProductHighLevelDescription] = useState<ProductHighLevelDescriptionSchema | null>(null);
   // Introduce a Single Workflow State
   const [activeWorkflow, setActiveWorkflow] = useState<string | null>(null);
 
@@ -68,9 +69,10 @@ const ProductHub: React.FC = () => {
   }, []);
 
   const renderWorkflowSelection = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveWorkflow(WORKFLOW_GITHUB_ISSUE)}>
-        <CardHeader>
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveWorkflow(WORKFLOW_GITHUB_ISSUE)}>
+          <CardHeader>
           <CardTitle className="flex items-center">
             <GitHubLogoIcon className="mr-2" />
             Start from GitHub Issue
@@ -103,8 +105,9 @@ const ProductHub: React.FC = () => {
         <CardContent>
           <p>Jump directly into creating or editing a Product Requirements Document.</p>
           <Button className="mt-4">Start</Button>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 
@@ -126,7 +129,15 @@ const ProductHub: React.FC = () => {
           </Button>
         </div>
 
-        {showLearningJournal && <LearningJournalComponent onEntryAdded={() => { }} />}
+        {/* {showLearningJournal && <LearningJournalComponent onEntryAdded={() => { }} />} */}
+        <div className="flex justify-center w-full">
+          <div className="w-2/3">
+            <ProductHighLevelDescription 
+              setActiveProductHighLevelDescription={setActiveProductHighLevelDescription} 
+              activeProductHighLevelDescription={activeProductHighLevelDescription}
+            />
+          </div>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -138,7 +149,7 @@ const ProductHub: React.FC = () => {
           {activeWorkflow !== null && (
             <div>
               {/* Render PRDQuestionFlow with onComplete callback */}
-              {activeWorkflow === WORKFLOW_PRD_QUESTION_FLOW && <PRDQuestionFlow onComplete={(prd) => {
+              {activeWorkflow === WORKFLOW_PRD_QUESTION_FLOW && activeProductHighLevelDescription && <PRDQuestionFlow activeProductHighLevelDescription={activeProductHighLevelDescription} onComplete={(prd) => {
                 setFinalizedPRD(prd)
                 setActiveWorkflow(WORKFLOW_PRD_CREATION_EDITING)
               }} />}

@@ -11,11 +11,13 @@ import {
 
 import { fetchOpenIssues } from './github';
 import { generateLeanPRD } from './prd/prd-generator-service';
+import { PrismaClient } from '@prisma/client';
 
 const app = new Hono();
 
 try {
-  const learningJournalService = new LearningJournalService();
+  const prisma = new PrismaClient();
+  const learningJournalService = new LearningJournalService(prisma);
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
   });
@@ -28,14 +30,14 @@ try {
     try {
       console.log('sending this data:', {
         ...body,
-        model: 'claude-3-5-sonnet-20240620',
+        model: 'claude-3-5-sonnet-latest',
         stream: true,
         max_tokens: 1000,
       });
 
       const response = (await anthropic.messages.create({
         ...body,
-        model: 'claude-3-5-sonnet-20240620',
+        model: 'claude-3-5-sonnet-latest',
         max_tokens: 1000,
         stream: false,
       })) as { content: Anthropic.Messages.TextBlock[] };
@@ -45,6 +47,11 @@ try {
       console.error('Error streaming response:', error);
       return c.json({ error: 'Failed to stream response. Please try again later.' }, 500);
     }
+  });
+
+  app.get('/api/product-high-level-descriptions', async (c) => {
+    const productHighLevelDescriptions = await prisma.productHighLevelDescription.findMany();
+    return c.json(productHighLevelDescriptions);
   });
 
   app.post('/api/learning-journal/entry', async (c) => {

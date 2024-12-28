@@ -5,14 +5,15 @@ import { CheckIcon, ArrowRightIcon } from 'lucide-react';
 import { useAutoResizeTextArea } from './hooks';
 import { AIResponseDisplay } from './AIResponseDisplay';
 import { usePRDQuestionFlow } from './usePRDQuestionFlow';
-import type { ImprovedLeanPRDSchema } from '../../../../shared/src/types';
+import type { ImprovedLeanPRDSchema, ProductHighLevelDescriptionSchema } from '../../../../shared/src/types';
 
 export interface PRDQuestionFlowProps {
+  activeProductHighLevelDescription: ProductHighLevelDescriptionSchema;
   onComplete: (prd: ImprovedLeanPRDSchema) => void;
 }
 
-export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({ onComplete }) => {
-  const { currentStep, responses, aiResponses, isLoading, handleSubmit, handleEdit, PRD_QUESTIONS } = usePRDQuestionFlow(onComplete);
+export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({ activeProductHighLevelDescription, onComplete }) => {
+  const { currentStep, responses, aiResponses, isLoading, handleSubmit, handleEdit, PRD_QUESTIONS } = usePRDQuestionFlow(activeProductHighLevelDescription, onComplete);
   const textareaRef = useAutoResizeTextArea(responses[PRD_QUESTIONS[currentStep].id] || '');
 
   return (

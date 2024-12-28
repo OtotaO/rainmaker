@@ -1,6 +1,6 @@
 // ./packages/frontend/src/components/Refinement/usePRDQuestionFlow.ts
 import { useState } from 'react';
-import type { ImprovedLeanPRDSchema } from '../../../../shared/src/types';
+import type { ImprovedLeanPRDSchema, ProductHighLevelDescriptionSchema } from '../../../../shared/src/types';
 
 const PRD_QUESTIONS = [
   { id: "1_SPEC", text: "What's the feature in one sentence?" },
@@ -9,182 +9,6 @@ const PRD_QUESTIONS = [
 ] as const;
 
 type QuestionId = typeof PRD_QUESTIONS[number]['id'];
-
-const productName = 'プロワン'
-
-// const discordProductDescription = `
-// .
-// Core Product Suite:
-
-// Communication:
-
-// Text Chat: Real-time text conversations (Channels, Threads, Direct Messaging). Built with React Native/React, Elixir, and likely Cassandra/Redis for persistence and speed.
-// Voice Chat: Real-time voice channels, stages, and streaming. Likely leverages Elixir, Rust (for performance), and WebRTC.
-// Video Chat: Real-time video and screen sharing. Likely uses WebRTC, potentially with Rust optimizations and Elixir signaling.
-
-// Community Features:
-
-// Server Management: Tools for community moderation and organization. Built using React Native/React, Elixir, and databases for persistence.
-// Integrations: Bots and webhooks for connecting external services. Likely uses Python and Elixir.
-// Events: Scheduled events and stage discovery. Likely built with React Native/React and Elixir, potentially leveraging Redis for real-time updates.
-
-// Platform Features:
-
-// User Profiles: Customizable profiles. React Native/React frontend, backend likely Elixir and database driven.
-// Nitro: Premium subscription features. Likely managed through Elixir and databases.
-// Developer Platform: API and SDKs. Likely utilizes Elixir, Python, and potentially other languages for specific SDKs.
-// Games: Activities, game detection, rich presence. Likely leverages native platform APIs (Kotlin/Swift) for detection and Elixir for backend management.
-// `
-
-const productDescription = `
-## プロワンバーティカルSaaSプロダクト： ドキュメント管理自動化 & 機能リスト
-
-このドキュメントでは、プロワンバーティカルSaaSプロダクトのドキュメント管理自動化と一般的な機能リストをMarkdown形式で詳しく説明します。
-
-### 1. ドキュメント管理自動化
-
-**自動化の対象となるドキュメント管理業務:**
-
-* **ドキュメント作成:**
-    * 契約書、提案書、請求書などのテンプレートからの自動生成
-    * 顧客データやシステムデータに基づいたドキュメントの自動入力
-    * 複数ドキュメントの自動結合
-* **ドキュメントレビュー・承認:**
-    * ワークフローに基づいた自動ルーティング
-    * 承認状況のリアルタイム追跡
-    * 電子署名による承認プロセスの迅速化
-* **ドキュメント保管・検索:**
-    * クラウドストレージへの自動保存
-    * メタデータに基づいた高度な検索機能
-    * バージョン管理による変更履歴の追跡
-* **ドキュメント分析:**
-    * AIを活用したドキュメント内容の自動抽出・分析
-    * データに基づいた意思決定の支援
-* **セキュリティ管理:**
-    * アクセス権限の設定による情報漏洩防止
-    * 監査証跡の記録によるコンプライアンス強化
-
-**自動化によるメリット:**
-
-* **業務効率化:**
-    * 手作業によるミスを削減
-    * 処理時間の短縮
-    * 従業員のリソースをより重要な業務に集中
-* **コスト削減:**
-    * 印刷、郵送、保管にかかるコストを削減
-    * 人件費の削減
-* **顧客満足度向上:**
-    * 迅速な対応
-    * 正確な情報提供
-    * シームレスな顧客体験
-* **コンプライアンス強化:**
-    * 法令遵守の徹底
-    * 内部統制の強化
-    * リスク管理の向上
-
-**自動化ツールの選定:**
-
-* **必要な機能:**
-    * 上記の自動化対象業務に対応しているか
-    * 既存システムとの連携が可能か
-    * セキュリティ対策は万全か
-* **使いやすさ:**
-    * 直感的な操作が可能か
-    * 導入・運用が容易か
-    * 従業員のトレーニングコスト
-* **コスト:**
-    * 初期費用、月額費用、運用コスト
-    * 投資対効果 (ROI)
-* **ベンダーの信頼性:**
-    * 導入実績
-    * サポート体制
-    * 将来的な展望
-
-**導入プロセス:**
-
-* **現状分析:**
-    * 現在のドキュメント管理プロセスにおける課題を明確化
-    * 自動化による効果を予測
-* **要件定義:**
-    * 必要な機能、性能、セキュリティ要件を定義
-* **ツール選定:**
-    * 複数のツールを比較検討
-    * デモやトライアルを実施
-* **導入・設定:**
-    * ツールの導入、設定、カスタマイズ
-    * 従業員へのトレーニング
-* **運用・改善:**
-    * 定期的なモニタリング
-    * 必要に応じて設定変更や機能追加
-
-
-### 2. プロワンバーティカルSaaSプロダクトの機能リスト
-
-**一般的な機能:**
-
-* **ユーザー管理:**
-    * ユーザー登録・認証
-    * アクセス権限管理
-    * シングルサインオン (SSO)
-* **データ管理:**
-    * データ入力・編集・削除
-    * データ検索・フィルタリング
-    * データエクスポート・インポート
-* **レポート・分析:**
-    * ダッシュボードによるデータ可視化
-    * カスタムレポート作成
-    * データ分析機能
-* **コミュニケーション:**
-    * 通知機能 (メール、プッシュ通知など)
-    * メッセージング機能
-    * コラボレーションツールとの連携
-* **セキュリティ:**
-    * データ暗号化
-    * アクセス制御
-    * 脆弱性対策
-* **API連携:**
-    * 他システムとの連携
-    * データの自動連携
-* **カスタマイズ:**
-    * ユーザーインターフェースのカスタマイズ
-    * ワークフローのカスタマイズ
-* **サポート:**
-    * オンラインヘルプ
-    * FAQ
-    * メール・電話サポート
-
-**特定の分野で想定される機能 (例: 不動産業界向け):**
-
-* **物件管理:**
-    * 物件情報登録・管理
-    * 入居者管理
-    * 契約管理
-* **賃貸管理:**
-    * 賃料管理
-    * 請求書発行
-    * 入金管理
-* **顧客管理:**
-    * 顧客情報管理
-    * 顧客対応履歴管理
-* **マーケティング:**
-    * メールマーケティング
-    * 広告管理
-* **分析:**
-    * 市場動向分析
-    * 競合分析
-
-**不明な機能:**
-
-具体的なプロダクトが不明なため、以下の機能については「不明」とさせていただきます。
-
-* **業界特有の専門機能:**
-    * プロダクトの対象分野によって大きく異なるため、特定できません。
-* **高度な分析機能:**
-    * AIや機械学習を活用した分析機能の有無は不明です。
-* **特定の外部サービスとの連携:**
-    * どのような外部サービスと連携しているかは不明です。
-`
-
 
 // const techStack = `
 // Technologies:
@@ -199,7 +23,7 @@ const PRD_QUESTION_TO_PROMPT: Record<
   QuestionId,
   (...args: string[]) => string // Change here: Accepts variable number of string arguments
 > = {
-  '1_SPEC': (userInput: string) => `
+  '1_SPEC': (userInput: string, productName: string, productDescription: string) => `
 This is a new feature proposal for ${productName}.
 
 Here's a brief outline of ${productName}'s current product line - up as well as their tech stack:
@@ -238,7 +62,7 @@ Why this is better: [Now share the output of <internal-reasoning-1> as a priorit
 5. Just return the markdown - make sure to line wrap at 80 characters
 </response-text-formatting>
 `,
-  '2_SUCCESS_METRIC': (improvedDescription: string, userInput: string) =>
+  '2_SUCCESS_METRIC': (improvedDescription: string, userInput: string, productName: string, productDescription: string) =>
     `
 This is a new feature proposal for ${productName}.
 
@@ -279,7 +103,7 @@ Why this is better: [Now share the output of <internal-reasoning-1> as a priorit
 5. Just return the markdown - make sure to line wrap at 80 characters
 </response-text-formatting>
 `,
-  '3_GOTCHAS': (improvedDescription: string, improvedSuccessMetric: string, userInput: string) =>
+  '3_GOTCHAS': (improvedDescription: string, improvedSuccessMetric: string, userInput: string, productName: string, productDescription: string) =>
     `
 This is a new feature proposal for ${productName}.
 
@@ -378,7 +202,7 @@ const callAnthropicAPI = async (currentStep: string, inputHistory: string[]): Pr
   }
 };
 
-export const usePRDQuestionFlow = (onComplete: (prd: ImprovedLeanPRDSchema) => void) => {
+export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHighLevelDescriptionSchema, onComplete: (prd: ImprovedLeanPRDSchema) => void) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [aiResponses, setAiResponses] = useState<Record<string, string>>({});
@@ -390,7 +214,6 @@ export const usePRDQuestionFlow = (onComplete: (prd: ImprovedLeanPRDSchema) => v
     const formData = new FormData(e.currentTarget);
     const userInput = formData.get('userInput') as string;
     console.log("userInput after casting:", userInput); // Log after casting
-
 
     console.log('user input:', userInput)
 
@@ -406,11 +229,11 @@ export const usePRDQuestionFlow = (onComplete: (prd: ImprovedLeanPRDSchema) => v
 
     // Provide correct arguments based on currentStep:
     if (currentStep === 0) { // '1_SPEC'
-      currentInputHistory[currentStep] = promptFunction(userInput);
+      currentInputHistory[currentStep] = promptFunction(userInput, activeProductHighLevelDescription.name, activeProductHighLevelDescription.description);
     } else if (currentStep === 1) { // '2_SUCCESS_METRIC'
-      currentInputHistory[currentStep] = promptFunction(inputHistory[0], userInput); // Use previous responses
+      currentInputHistory[currentStep] = promptFunction(inputHistory[0], userInput, activeProductHighLevelDescription.name, activeProductHighLevelDescription.description); // Use previous responses
     } else if (currentStep === 2) { // '3_GOTCHAS'
-      currentInputHistory[currentStep] = promptFunction(inputHistory[0], inputHistory[1], userInput); // Use previous responses
+      currentInputHistory[currentStep] = promptFunction(inputHistory[0], inputHistory[1], userInput, activeProductHighLevelDescription.name, activeProductHighLevelDescription.description); // Use previous responses
     }
 
     console.log('current input history:', currentInputHistory);
