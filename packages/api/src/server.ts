@@ -1,19 +1,17 @@
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import type { z } from 'zod';
+import express from 'express';
+import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { Anthropic } from '@anthropic-ai/sdk';
+import { contract } from '../../shared/src/api-contract';
 import { LearningJournalService } from './learningJournalService';
-import {
-  LearningJournalEntryRequestSchema,
-  LearningJournalEntriesResponseSchema,
-  AIAssistanceLevelResponseSchema,
-} from '../../shared/src/types';
-
 import { fetchOpenIssues } from './github';
 import { generateLeanPRD } from './prd/prd-generator-service';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '.prisma/client';
+import cors from 'cors';
+import { z } from 'zod';
+import type { ServerInferRequest } from '@ts-rest/core';
 
-const app = new Hono();
+const app = express();
+const s = initServer();
 
 try {
   const prisma = new PrismaClient();
@@ -22,114 +20,175 @@ try {
     apiKey: process.env.ANTHROPIC_API_KEY,
   });
 
-  app.use('/*', cors());
+  app.use(express.json());
+  app.use(cors());
 
-  app.post('/api/anthropic', async (c) => {
-    const body = (await c.req.json()) as Anthropic.MessageCreateParams;
+  const router = s.router(contract, {
+    anthropic: {
+      sendMessage: async ({ body }: ServerInferRequest<typeof contract.anthropic.sendMessage>) => {
+        try {
+          console.log('sending this data:', {
+            ...body,
+            model: 'claude-3-5-sonnet-latest',
+            stream: true,
+            max_tokens: 1000,
+          });
 
-    try {
-      console.log('sending this data:', {
-        ...body,
-        model: 'claude-3-5-sonnet-latest',
-        stream: true,
-        max_tokens: 1000,
-      });
+          const response = (await anthropic.messages.create({
+            ...body,
+            model: 'claude-3-5-sonnet-latest',
+            max_tokens: 1000,
+            stream: false,
+          })) as { content: Anthropic.Messages.TextBlock[] };
 
-      const response = (await anthropic.messages.create({
-        ...body,
-        model: 'claude-3-5-sonnet-latest',
-        max_tokens: 1000,
-        stream: false,
-      })) as { content: Anthropic.Messages.TextBlock[] };
+          return {
+            status: 200,
+            body: { message: response.content[0].text },
+          };
+        } catch (error) {
+          console.error('Error streaming response:', error);
+          return {
+            status: 500,
+            body: { error: 'Failed to stream response. Please try again later.' },
+          };
+        }
+      },
+    },
 
-      return c.json({ message: response.content[0].text });
-    } catch (error) {
-      console.error('Error streaming response:', error);
-      return c.json({ error: 'Failed to stream response. Please try again later.' }, 500);
-    }
+    productHighLevelDescriptions: {
+      getAll: async () => {
+        try {
+          const productHighLevelDescriptions = await prisma.productHighLevelDescription.findMany();
+          return {
+            status: 200,
+            body: productHighLevelDescriptions.map(desc => ({
+              ...desc,
+              createdAt: desc.createdAt.toISOString(),
+              updatedAt: desc.updatedAt.toISOString()
+            })),
+          };
+        } catch (error) {
+          console.error('Error fetching product descriptions:', error);
+          return {
+            status: 500,
+            body: { error: 'Failed to fetch product descriptions' },
+          };
+        }
+      },
+    },
+
+    learningJournal: {
+      addEntry: async ({ body }: ServerInferRequest<typeof contract.learningJournal.addEntry>) => {
+        try {
+          await learningJournalService.addEntry(body);
+          return {
+            status: 201,
+            body: { message: 'Entry added successfully' },
+          };
+        } catch (error) {
+          console.error('Error adding journal entry:', error);
+          return {
+            status: 500,
+            body: { error: 'Failed to add journal entry. Please try again later.' },
+          };
+        }
+      },
+
+      getEntries: async () => {
+        try {
+          const entries = await learningJournalService.getEntries();
+          return {
+            status: 200,
+            body: entries,
+          };
+        } catch (error) {
+          console.error('Error retrieving journal entries:', error);
+          return {
+            status: 500,
+            body: { error: 'Failed to retrieve journal entries. Please try again later.' },
+          };
+        }
+      },
+    },
+
+    prd: {
+      generateFromSuggestions: async ({ body }: ServerInferRequest<typeof contract.prd.generateFromSuggestions>) => {
+        try {
+          const [improvedDescription, successMetric, criticalRisk] = body;
+          const result = await generateLeanPRD({
+            improvedDescription,
+            successMetric,
+            criticalRisk,
+          });
+
+          return {
+            status: 200,
+            body: result,
+          };
+        } catch (error) {
+          console.error('Error generating PRD:', error);
+          return {
+            status: 500,
+            body: { error: 'Failed to generate PRD. Please try again later.' },
+          };
+        }
+      },
+    },
+
+    aiAssistance: {
+      getLevel: async () => {
+        try {
+          const assistanceLevel = await learningJournalService.calculateAIAssistanceLevel();
+          return {
+            status: 200,
+            body: assistanceLevel,
+          };
+        } catch (error) {
+          console.error('Error calculating AI assistance level:', error);
+          return {
+            status: 500,
+            body: { error: 'Failed to calculate AI assistance level. Please try again later.' },
+          };
+        }
+      },
+    },
+
+    github: {
+      getIssues: async () => {
+        try {
+          const issues = await fetchOpenIssues('f8n-ai', 'structure');
+          return {
+            status: 200,
+            body: issues.map(issue => ({
+              id: issue.id,
+              number: issue.number,
+              title: issue.title,
+              body: issue.body || '',
+              labels: issue.labels.map(label => typeof label === 'string' ? label : label.name || ''),
+              createdAt: new Date(issue.created_at).toISOString(),
+              updatedAt: new Date(issue.updated_at).toISOString()
+            })),
+          };
+        } catch (error) {
+          console.error('Error fetching GitHub issues:', error);
+          return {
+            status: 500,
+            body: { error: 'Failed to fetch GitHub issues. Please try again later.' },
+          };
+        }
+      },
+    },
   });
 
-  app.get('/api/product-high-level-descriptions', async (c) => {
-    const productHighLevelDescriptions = await prisma.productHighLevelDescription.findMany();
-    return c.json(productHighLevelDescriptions);
-  });
-
-  app.post('/api/learning-journal/entry', async (c) => {
-    try {
-      const body = await c.req.json();
-      const validatedEntry = LearningJournalEntryRequestSchema.parse(body);
-      await learningJournalService.addEntry(validatedEntry);
-      return c.json({ message: 'Entry added successfully' }, 201);
-    } catch (error) {
-      if ((error as z.ZodError).name === 'ZodError') {
-        return c.json(
-          { error: 'Invalid entry format', details: (error as z.ZodError).errors },
-          400
-        );
-      }
-
-      console.error('Error adding journal entry:', error);
-      return c.json({ error: 'Failed to add journal entry. Please try again later.' }, 500);
-    }
-  });
-
-  app.get('/api/learning-journal/entries', async (c) => {
-    try {
-      const entries = await learningJournalService.getEntries();
-      const validatedEntries = LearningJournalEntriesResponseSchema.parse(entries);
-      return c.json(validatedEntries);
-    } catch (error) {
-      console.error('Error retrieving journal entries:', error);
-      return c.json({ error: 'Failed to retrieve journal entries. Please try again later.' }, 500);
-    }
-  });
-
-  app.post('/api/prd-suggestions-to-lean-prd', async (c) => {
-    const body = await c.req.json();
-
-    console.log('body:', body);
-
-    const result = await generateLeanPRD({
-      improvedDescription: body[0],
-      successMetric: body[1],
-      criticalRisk: body[2],
-    });
-
-    return c.json(result);
-  });
-
-  // app.get('/api/epic-task-breakdown', async (c) => {
-  //   const result = await epicTaskBreakdown() .getEpicTaskBreakdown();
-  //   return c.json(result);
-  // });
-
-  app.get('/api/ai-assistance-level', async (c) => {
-    try {
-      const assistanceLevel = await learningJournalService.calculateAIAssistanceLevel();
-      const validatedAssistanceLevel = AIAssistanceLevelResponseSchema.parse(assistanceLevel);
-      return c.json(validatedAssistanceLevel);
-    } catch (error) {
-      console.error('Error calculating AI assistance level:', error);
-      return c.json(
-        { error: 'Failed to calculate AI assistance level. Please try again later.' },
-        500
-      );
-    }
-  });
-
-  app.get('/api/github/issues', async (c) => {
-    const issues = await fetchOpenIssues('f8n-ai', 'structure');
-    return c.json(issues);
-  });
+  createExpressEndpoints(contract, router, app);
 } catch (error) {
   console.error('Error starting server:', error);
 }
 
 const port = 3001;
 
-console.log(`Server is running on port ${port}`);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 
-export default {
-  port,
-  fetch: app.fetch,
-};
+export default app;
