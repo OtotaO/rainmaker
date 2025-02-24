@@ -9,6 +9,7 @@ import { PrismaClient } from '.prisma/client';
 import cors from 'cors';
 import { z } from 'zod';
 import type { ServerInferRequest } from '@ts-rest/core';
+import { GitHubIssueSchema, GitHubIssuesResponseSchema } from '../../shared/src/schemas/github';
 
 const app = express();
 const s = initServer();
@@ -157,17 +158,11 @@ try {
       getIssues: async () => {
         try {
           const issues = await fetchOpenIssues('f8n-ai', 'structure');
+          const validatedIssues = GitHubIssuesResponseSchema.parse(issues);
+          
           return {
             status: 200,
-            body: issues.map(issue => ({
-              id: issue.id,
-              number: issue.number,
-              title: issue.title,
-              body: issue.body || '',
-              labels: issue.labels.map(label => typeof label === 'string' ? label : label.name || ''),
-              createdAt: new Date(issue.created_at).toISOString(),
-              updatedAt: new Date(issue.updated_at).toISOString()
-            })),
+            body: validatedIssues,
           };
         } catch (error) {
           console.error('Error fetching GitHub issues:', error);
