@@ -73,33 +73,14 @@ export const fetchOpenIssues = async (owner: string, repo: string): Promise<GitH
       per_page: 100,
     });
 
-    console.log('response:', response.data);
-
     if (response.data.length === 0) {
-      // Handle the case when there are no open issues in the repository
       console.warn(`No open issues found for ${owner}/${repo}`);
       return [];
     }
 
-    return (
-      response.data
-        .filter((issue) => issue !== undefined)
-        .map((issue) => ({
-          ...issue,
-          id: issue.id,
-          number: issue.number,
-          title: issue.title,
-          body: issue.body || '',
-          labels: issue.labels.map((label) =>
-            typeof label === 'string' ? label : label?.name || ''
-          ),
-          createdAt: issue.created_at,
-          updatedAt: issue.updated_at,
-        })) || []
-    );
+    return response.data;
   } catch (error) {
     if (error instanceof RequestError) {
-      // Handle GitHub API failures or timeouts
       if ((error as RequestError).status === 404) {
         throw new Error(`Repository not found: ${owner}/${repo}`);
       }
