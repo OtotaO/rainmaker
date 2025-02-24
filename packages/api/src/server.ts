@@ -157,7 +157,14 @@ try {
     github: {
       getIssues: async () => {
         try {
-          const issues = await fetchOpenIssues('f8n-ai', 'structure');
+          const owner = process.env.GITHUB_OWNER;
+          const repo = process.env.GITHUB_REPO;
+          
+          if (!owner || !repo) {
+            throw new Error('GitHub owner or repo not configured');
+          }
+          
+          const issues = await fetchOpenIssues(owner, repo);
           const validatedIssues = GitHubIssuesResponseSchema.parse(issues);
           
           return {
