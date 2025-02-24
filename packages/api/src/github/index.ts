@@ -72,7 +72,7 @@ export const fetchOpenIssues = async (owner: string, repo: string): Promise<GitH
       state: 'open',
       per_page: 100,
     });
-
+    console.log('response', { response: response.data });
     if (response.data.length === 0) {
       console.warn(`No open issues found for ${owner}/${repo}`);
       return [];
