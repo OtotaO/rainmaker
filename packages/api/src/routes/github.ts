@@ -5,7 +5,6 @@
 
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import type { ServerInferRequest } from '@ts-rest/core';
 import { fetchOpenIssues } from '../github';
 import { GitHubIssuesResponseSchema, GitHubErrorResponseSchema } from '../../../shared/src/schemas/github';
 

@@ -5,7 +5,6 @@
 
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import type { ServerInferRequest } from '@ts-rest/core';
 import { LearningJournalService } from '../learningJournalService';
 import { AIAssistanceLevelResponseSchema } from '../../../shared/src/types';
 

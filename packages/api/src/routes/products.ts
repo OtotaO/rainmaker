@@ -1,6 +1,5 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import type { ServerInferRequest } from '@ts-rest/core';
 import { PrismaClient } from '.prisma/client';
 import { ProductHighLevelDescriptionSchema } from '../../../shared/src/types';
 
