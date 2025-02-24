@@ -1,3 +1,8 @@
+/**
+ * @fileoverview PRD (Product Requirements Document) API routes and contract definitions.
+ * Handles the generation of lean PRDs from user suggestions.
+ */
+
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import type { ServerInferRequest } from '@ts-rest/core';
@@ -5,12 +10,18 @@ import { generateLeanPRD } from '../prd/prd-generator-service';
 
 const c = initContract();
 
+/**
+ * Standard error response schema for PRD endpoints
+ */
 const ErrorResponse = z.object({
   error: z.string(),
   details: z.array(z.any()).optional(),
 });
 
-// Define the contract
+/**
+ * API contract definition for PRD endpoints
+ * @property {Object} generateFromSuggestions - Contract for generating PRD from user suggestions
+ */
 const contract = {
   generateFromSuggestions: {
     method: 'POST' as const,
@@ -27,12 +38,22 @@ const contract = {
   },
 } as const;
 
-// Create the router from the contract
+/**
+ * Router instance created from the PRD contract
+ */
 export const prdRouter = c.router(contract);
 
-// Create the implementation using the contract
+/**
+ * Creates the implementation for PRD routes
+ * @returns {Object} Route implementations for PRD endpoints
+ */
 export const createPrdRouter = () => ({
-  // Implementation sits right next to its contract definition
+  /**
+   * Generates a lean PRD from user suggestions
+   * @param {Object} params - Request parameters
+   * @param {[string, string, string]} params.body - Tuple containing [improvedDescription, successMetric, criticalRisk]
+   * @returns {Promise<Object>} Response containing generated PRD or error
+   */
   generateFromSuggestions: async ({ body }: ServerInferRequest<typeof contract.generateFromSuggestions>) => {
     try {
       const [improvedDescription, successMetric, criticalRisk] = body;

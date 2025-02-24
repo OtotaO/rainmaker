@@ -1,3 +1,8 @@
+/**
+ * @fileoverview AI Assistance API routes and contract definitions.
+ * Handles the calculation and retrieval of AI assistance levels.
+ */
+
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import type { ServerInferRequest } from '@ts-rest/core';
@@ -6,12 +11,18 @@ import { AIAssistanceLevelResponseSchema } from '../../../shared/src/types';
 
 const c = initContract();
 
+/**
+ * Standard error response schema for AI Assistance endpoints
+ */
 const ErrorResponse = z.object({
   error: z.string(),
   details: z.array(z.any()).optional(),
 });
 
-// Define the contract
+/**
+ * API contract definition for AI Assistance endpoints
+ * @property {Object} getLevel - Contract for retrieving AI assistance level
+ */
 const contract = {
   getLevel: {
     method: 'GET' as const,
@@ -23,12 +34,21 @@ const contract = {
   },
 } as const;
 
-// Create the router from the contract
+/**
+ * Router instance created from the AI Assistance contract
+ */
 export const aiAssistanceRouter = c.router(contract);
 
-// Create the implementation using the contract
+/**
+ * Creates the implementation for AI Assistance routes
+ * @param {LearningJournalService} learningJournalService - Service for calculating AI assistance levels
+ * @returns {Object} Route implementations for AI Assistance endpoints
+ */
 export const createAiAssistanceRouter = (learningJournalService: LearningJournalService) => ({
-  // Implementation sits right next to its contract definition
+  /**
+   * Calculates and retrieves the current AI assistance level
+   * @returns {Promise<Object>} Response containing assistance level or error
+   */
   getLevel: async () => {
     try {
       const assistanceLevel = await learningJournalService.calculateAIAssistanceLevel();

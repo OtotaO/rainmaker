@@ -1,3 +1,8 @@
+/**
+ * @fileoverview GitHub API integration routes and contract definitions.
+ * Handles fetching and processing of GitHub issues.
+ */
+
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import type { ServerInferRequest } from '@ts-rest/core';
@@ -6,12 +11,18 @@ import { GitHubIssuesResponseSchema, GitHubErrorResponseSchema } from '../../../
 
 const c = initContract();
 
+/**
+ * Standard error response schema for GitHub endpoints
+ */
 const ErrorResponse = z.object({
   error: z.string(),
   details: z.array(z.any()).optional(),
 });
 
-// Define the contract
+/**
+ * API contract definition for GitHub endpoints
+ * @property {Object} getIssues - Contract for retrieving GitHub issues
+ */
 const contract = {
   getIssues: {
     method: 'GET' as const,
@@ -23,12 +34,21 @@ const contract = {
   },
 } as const;
 
-// Create the router from the contract
+/**
+ * Router instance created from the GitHub contract
+ */
 export const githubRouter = c.router(contract);
 
-// Create the implementation using the contract
+/**
+ * Creates the implementation for GitHub routes
+ * @returns {Object} Route implementations for GitHub endpoints
+ */
 export const createGithubRouter = () => ({
-  // Implementation sits right next to its contract definition
+  /**
+   * Fetches open issues from the configured GitHub repository
+   * @returns {Promise<Object>} Response containing GitHub issues or error
+   * @throws {Error} When GitHub owner or repo environment variables are not configured
+   */
   getIssues: async () => {
     try {
       const owner = process.env.GITHUB_OWNER;

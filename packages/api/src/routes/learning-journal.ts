@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Learning Journal API routes and contract definitions.
+ * Handles the creation and retrieval of learning journal entries.
+ */
+
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import type { ServerInferRequest } from '@ts-rest/core';
@@ -9,12 +14,19 @@ import {
 
 const c = initContract();
 
+/**
+ * Standard error response schema for Learning Journal endpoints
+ */
 const ErrorResponse = z.object({
   error: z.string(),
   details: z.array(z.any()).optional(),
 });
 
-// Define the contract
+/**
+ * API contract definition for Learning Journal endpoints
+ * @property {Object} addEntry - Contract for creating new journal entries
+ * @property {Object} getEntries - Contract for retrieving journal entries
+ */
 const contract = {
   addEntry: {
     method: 'POST' as const,
@@ -38,12 +50,23 @@ const contract = {
   },
 } as const;
 
-// Create the router from the contract
+/**
+ * Router instance created from the Learning Journal contract
+ */
 export const learningJournalRouter = c.router(contract);
 
-// Create the implementation using the contract
+/**
+ * Creates the implementation for Learning Journal routes
+ * @param {LearningJournalService} learningJournalService - Service for managing learning journal entries
+ * @returns {Object} Route implementations for Learning Journal endpoints
+ */
 export const createLearningJournalRouter = (learningJournalService: LearningJournalService) => ({
-  // Implementation sits right next to its contract definition
+  /**
+   * Handles the creation of a new learning journal entry
+   * @param {Object} params - Request parameters
+   * @param {Object} params.body - The entry data to be created
+   * @returns {Promise<Object>} Response containing success message or error
+   */
   addEntry: async ({ body }: ServerInferRequest<typeof contract.addEntry>) => {
     try {
       await learningJournalService.addEntry(body);
@@ -59,6 +82,11 @@ export const createLearningJournalRouter = (learningJournalService: LearningJour
       };
     }
   },
+
+  /**
+   * Retrieves all learning journal entries
+   * @returns {Promise<Object>} Response containing entries or error
+   */
   getEntries: async () => {
     try {
       const entries = await learningJournalService.getEntries();

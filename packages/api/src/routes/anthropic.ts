@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Anthropic API integration routes and contract definitions.
+ * Handles communication with the Anthropic AI service for message processing.
+ */
+
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import type { ServerInferRequest } from '@ts-rest/core';
@@ -5,12 +10,18 @@ import { Anthropic } from '@anthropic-ai/sdk';
 
 const c = initContract();
 
+/**
+ * Standard error response schema for Anthropic endpoints
+ */
 const ErrorResponse = z.object({
   error: z.string(),
   details: z.array(z.any()).optional(),
 });
 
-// Define the contract
+/**
+ * API contract definition for Anthropic endpoints
+ * @property {Object} sendMessage - Contract for the message sending endpoint
+ */
 const contract = {
   sendMessage: {
     method: 'POST' as const,
@@ -28,12 +39,17 @@ const contract = {
   },
 } as const;
 
-// Create the router from the contract
+/**
+ * Router instance created from the Anthropic contract
+ */
 export const anthropicRouter = c.router(contract);
 
-// Create the implementation using the contract
+/**
+ * Creates the implementation for Anthropic routes
+ * @param {Anthropic} anthropic - Initialized Anthropic client instance
+ * @returns {Object} Route implementations for Anthropic endpoints
+ */
 export const createAnthropicRouter = (anthropic: Anthropic) => ({
-  // Implementation sits right next to its contract definition
   sendMessage: async ({ body }: ServerInferRequest<typeof contract.sendMessage>) => {
     try {
       console.log('sending this data:', {
