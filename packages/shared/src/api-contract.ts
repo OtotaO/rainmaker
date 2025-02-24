@@ -6,6 +6,7 @@ import {
   AIAssistanceLevelResponseSchema,
   ProductHighLevelDescriptionSchema,
 } from './types';
+import { GitHubIssuesResponseSchema, GitHubErrorResponseSchema } from './schemas/github';
 
 const c = initContract();
 
@@ -101,16 +102,8 @@ export const contract = c.router({
       method: 'GET',
       path: '/api/github/issues',
       responses: {
-        200: z.array(z.object({
-          id: z.number(),
-          number: z.number(),
-          title: z.string(),
-          body: z.string(),
-          labels: z.array(z.string()),
-          createdAt: z.string(),
-          updatedAt: z.string(),
-        })),
-        500: ErrorResponse,
+        200: GitHubIssuesResponseSchema,
+        500: GitHubErrorResponseSchema,
       },
     },
   },
