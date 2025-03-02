@@ -3,6 +3,7 @@
 import { Octokit } from '@octokit/rest';
 import { RequestError } from '@octokit/request-error';
 import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods';
+import { logger } from '../lib/logger';
 
 type GitHubIssue = RestEndpointMethodTypes['issues']['listForRepo']['response']['data'][0];
 
@@ -34,7 +35,7 @@ export const createGitHubIssue = async (
       issueNumber: response.data.number,
     };
   } catch (error) {
-    console.error('Error creating GitHub issue:', error);
+    logger.error('Error creating GitHub issue:', error);
     return {
       success: false,
       error: 'Failed to create GitHub issue',
@@ -56,7 +57,7 @@ export const addCommentToIssue = async (issueNumber: number, comment: string) =>
       commentUrl: response.data.html_url,
     };
   } catch (error) {
-    console.error('Error adding comment to GitHub issue:', error);
+    logger.error('Error adding comment to GitHub issue:', error);
     return {
       success: false,
       error: 'Failed to add comment to GitHub issue',
@@ -72,9 +73,9 @@ export const fetchOpenIssues = async (owner: string, repo: string): Promise<GitH
       state: 'open',
       per_page: 100,
     });
-    console.log('response', { response: response.data });
+    logger.debug('response', { response: response.data });
     if (response.data.length === 0) {
-      console.warn(`No open issues found for ${owner}/${repo}`);
+      logger.warn(`No open issues found for ${owner}/${repo}`);
       return [];
     }
 
@@ -94,7 +95,7 @@ export const fetchOpenIssues = async (owner: string, repo: string): Promise<GitH
 
       throw new Error(`GitHub API error: ${(error as RequestError).message}`);
     }
-    console.error('Unexpected error fetching GitHub issues:', error);
+    logger.error('Unexpected error fetching GitHub issues:', error);
     throw new Error('An unexpected error occurred while fetching GitHub issues');
   }
 };

@@ -4,6 +4,7 @@ import { Anthropic } from '@anthropic-ai/sdk';
 import { LearningJournalService } from './learningJournalService';
 import { PrismaClient } from '.prisma/client';
 import cors from 'cors';
+import { logger } from './lib/logger';
 
 import { anthropicRouter, createAnthropicRouter } from './routes/anthropic';
 import { productsRouter, createProductsRouter } from './routes/products';
@@ -47,12 +48,13 @@ try {
 
   createExpressEndpoints(contract, router, app);
 } catch (error) {
-  console.error('Error starting server:', error);
+  logger.error('Error starting server:', error);
 }
 
 const port = 3001;
 
 app.listen(port, () => {
+  //Intentionally using console.log because we don't know if logger has been initialized yet/
   console.log(`Server is running on port ${port}`);
 });
 

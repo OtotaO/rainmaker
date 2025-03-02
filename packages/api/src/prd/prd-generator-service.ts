@@ -23,7 +23,7 @@ export const generateLeanPRD = async (
 ): Promise<FlexibleLeanPRDSchema> => {
   let retries = 0;
 
-  console.log('input for generating lean PRD:', input);
+  logger.debug('input for generating lean PRD:', input);
 
   while (retries < maxRetries) {
     try {

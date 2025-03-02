@@ -7,6 +7,7 @@ import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import type { ServerInferRequest } from '@ts-rest/core';
 import { Anthropic } from '@anthropic-ai/sdk';
+import { logger } from '../lib/logger';
 
 const c = initContract();
 
@@ -52,7 +53,7 @@ export const anthropicRouter = c.router(contract);
 export const createAnthropicRouter = (anthropic: Anthropic) => ({
   sendMessage: async ({ body }: ServerInferRequest<typeof contract.sendMessage>) => {
     try {
-      console.log('Sending request to Anthropic:', {
+      logger.debug('Sending request to Anthropic:', {
         ...body,
         model: 'claude-3-7-sonnet-latest',
         max_tokens: 1000,
@@ -69,7 +70,7 @@ export const createAnthropicRouter = (anthropic: Anthropic) => ({
         body: { message: response.content[0].text },
       };
     } catch (error) {
-      console.error('Error getting response from Anthropic:', error);
+      logger.error('Error getting response from Anthropic:', error);
       return {
         status: 500 as const,
         body: { error: 'Failed to get response from Anthropic. Please try again later.' },
