@@ -20,6 +20,18 @@ const ErrorResponse = z.object({
 });
 
 /**
+ * Schema for validating Anthropic API response
+ */
+const AnthropicResponseSchema = z.object({
+  content: z.array(
+    z.object({
+      text: z.string(),
+      type: z.literal('text'),
+    })
+  ),
+});
+
+/**
  * API contract definition for Anthropic endpoints
  * @property {Object} sendMessage - Contract for the message sending endpoint
  */
@@ -59,11 +71,29 @@ export const createAnthropicRouter = (anthropic: Anthropic) => ({
         max_tokens: 1000,
       });
 
-      const response = (await anthropic.messages.create({
+      const rawResponse = await anthropic.messages.create({
         ...body,
         model: 'claude-3-7-sonnet-latest',
         max_tokens: 1000,
-      })) as { content: Anthropic.Messages.TextBlock[] };
+      });
+
+      // Validate the response using Zod
+      const parsedResponse = AnthropicResponseSchema.safeParse(rawResponse);
+      
+      if (!parsedResponse.success) {
+        logger.error('Invalid response format from Anthropic:', {
+          error: parsedResponse.error,
+          response: rawResponse,
+        });
+        throw new Error('Received invalid response format from Anthropic');
+      }
+      
+      const response = parsedResponse.data;
+      
+      if (!response.content.length) {
+        logger.error('Empty content array in Anthropic response');
+        throw new Error('Received empty content from Anthropic');
+      }
 
       return {
         status: 200 as const,
