@@ -52,18 +52,16 @@ export const anthropicRouter = c.router(contract);
 export const createAnthropicRouter = (anthropic: Anthropic) => ({
   sendMessage: async ({ body }: ServerInferRequest<typeof contract.sendMessage>) => {
     try {
-      console.log('sending this data:', {
+      console.log('Sending request to Anthropic:', {
         ...body,
-        model: 'claude-3-5-sonnet-latest',
-        stream: true,
+        model: 'claude-3-7-sonnet-latest',
         max_tokens: 1000,
       });
 
       const response = (await anthropic.messages.create({
         ...body,
-        model: 'claude-3-5-sonnet-latest',
+        model: 'claude-3-7-sonnet-latest',
         max_tokens: 1000,
-        stream: false,
       })) as { content: Anthropic.Messages.TextBlock[] };
 
       return {
@@ -71,10 +69,10 @@ export const createAnthropicRouter = (anthropic: Anthropic) => ({
         body: { message: response.content[0].text },
       };
     } catch (error) {
-      console.error('Error streaming response:', error);
+      console.error('Error getting response from Anthropic:', error);
       return {
         status: 500 as const,
-        body: { error: 'Failed to stream response. Please try again later.' },
+        body: { error: 'Failed to get response from Anthropic. Please try again later.' },
       };
     }
   },

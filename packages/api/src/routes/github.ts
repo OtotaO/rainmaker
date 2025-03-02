@@ -3,7 +3,7 @@
  * Handles fetching and processing of GitHub issues.
  */
 
-import { initContract } from '@ts-rest/core';
+import { initContract, ServerInferRequest } from '@ts-rest/core';
 import { z } from 'zod';
 import { fetchOpenIssues } from '../github';
 import { GitHubIssuesResponseSchema, GitHubErrorResponseSchema } from '../../../shared/src/schemas/github';
@@ -45,10 +45,11 @@ export const githubRouter = c.router(contract);
 export const createGithubRouter = () => ({
   /**
    * Fetches open issues from the configured GitHub repository
+   * @param {Object} params - Request parameters
    * @returns {Promise<Object>} Response containing GitHub issues or error
    * @throws {Error} When GitHub owner or repo environment variables are not configured
    */
-  getIssues: async () => {
+  getIssues: async (_: ServerInferRequest<typeof contract.getIssues>) => {
     try {
       const owner = process.env.GITHUB_OWNER;
       const repo = process.env.GITHUB_REPO;
