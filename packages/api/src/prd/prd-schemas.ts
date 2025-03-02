@@ -4,6 +4,35 @@ import { z } from 'zod';
 import type { FlexibleSchema } from '../lib/schema-utils';
 import { createFlexibleSchema } from '../lib/schema-utils';
 
+// Section ID constants
+export const CORE_SECTION_ID = '01-CORE';
+export const BUSINESS_OBJECTIVE_ID = '02-BOBJ';
+export const USER_STORY_ID = '03-USER';
+export const OVERALL_ASSESSMENT_ID = '01-OVRL';
+
+//TODO(fwd): Fix according to comment
+// Let's remove the optional field and also extract this to be conditional - if the revision of the PRD is greater than 1, there must be critiques that were applied. This can be done via discriminated union and an extra field we discriminate on, say... prdType (which is a discriminated union of z.literal values that can be initial, revised-based-on-feedback, updated-due-to-interaction-with-new-feature).
+
+// Then for each prdType, we have distinct object shapes:
+
+// For initial, appliedCritiqueIds doesn't exist at all
+// For revised-based-on-feedback, appliedCritiqueIds should be non-empty and have runtime check to ensure that all given critique IDs are included in the list
+// For updated-due-to-interaction-with-new-feature, we should include the ID of the new feature. In future, we probably want to have a join table that describes exactly what the interaction pattern is with the new feature, but for now, this should suffice.
+
+// Second comment 
+
+// Let's promote critique IDs to a first class object 
+// - I think it's better this way because then we can be more deliberate in having the "PRD reviewer"
+// LLM prompt explicitly state which section of the PRD the critique applies to upfront.
+// This will make the "PRD writer" LLM have to do less work on figuring that out and spend its cognitive effort on actually addressing the critique =)
+
+// Third comment
+
+// Let's help out the LLM by being explicit which 4 items we want 
+// - we want the four most important items that define the "perimeter" of this feature 
+// - meaning we want something like the "minimal spanning set" of semantically orthogonal constraints that say what is not in scope.
+
+
 export const LeanPRDSchema = z.object({
   revisionInfo: z.object({
     revisionNumber: z.number().int().positive()
@@ -13,7 +42,7 @@ export const LeanPRDSchema = z.object({
   }).describe('Metadata about the PRD revision history'),
   coreFeatureDefinition: z
     .object({
-      id: z.literal('01-CORE')
+      id: z.literal(CORE_SECTION_ID)
         .describe('Fixed identifier for the core feature section'),
       appliedCritiqueIds: z.array(z.string()).optional()
         .describe('IDs of critiques that were applied to improve this section'),
@@ -23,7 +52,7 @@ export const LeanPRDSchema = z.object({
     .describe('A concise 1-2 sentence definition of the core feature'),
   businessObjective: z
     .object({
-      id: z.literal('02-BOBJ')
+      id: z.literal(BUSINESS_OBJECTIVE_ID)
         .describe('Fixed identifier for the business objective section'),
       appliedCritiqueIds: z.array(z.string()).optional()
         .describe('IDs of critiques that were applied to improve this section'),
@@ -33,7 +62,7 @@ export const LeanPRDSchema = z.object({
     .describe('The main business goal this feature aims to achieve'),
   keyUserStory: z
     .object({
-      id: z.literal('03-USER')
+      id: z.literal(USER_STORY_ID)
         .describe('Fixed identifier for the key user story section'),
       appliedCritiqueIds: z.array(z.string()).optional()
         .describe('IDs of critiques that were applied to improve this section'),
@@ -134,7 +163,7 @@ export type FeatureInputSchema = z.infer<typeof FeatureInputSchema>;
 export const PRDFeedbackSchema = z.object({
   overallAssessment: z
     .object({
-      id: z.literal('01-OVRL')
+      id: z.literal(OVERALL_ASSESSMENT_ID)
         .describe('Fixed identifier for the overall assessment section'),
       referencedIds: z.array(z.string())
         .describe('IDs of PRD sections this assessment references'),
