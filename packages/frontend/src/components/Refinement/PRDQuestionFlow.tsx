@@ -60,7 +60,7 @@ export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({ activeProductH
 
       {/* Display AI Responses */}
       <AnimatePresence>
-        {Object.entries(aiResponses).map(([step, response]) => (
+        {Object.entries(aiResponses).filter(([_, response]) => response !== undefined).map(([step, response]) => (
           <AIResponseDisplay key={step} step={step} response={response} onEdit={handleEdit} />
         ))}
       </AnimatePresence>

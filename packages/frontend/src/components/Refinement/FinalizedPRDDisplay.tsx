@@ -36,7 +36,10 @@ export const FinalizedPRDDisplay: React.FC<FinalizedPRDDisplayProps> = ({ finali
   const renderSection = (sectionId: keyof typeof sectionIcons) => {
     const icon = sectionIcons[sectionId];
     const title = formatSectionName(sectionId);
-    const content = finalizedPRD[sectionId.charAt(0).toLowerCase() + sectionId.slice(1)];
+    // Create a properly converted key
+    const key = sectionId.charAt(0).toLowerCase() + sectionId.slice(1);
+    // Use type assertion to tell TypeScript that this is a valid key
+    const content = (finalizedPRD as Record<string, any>)[key];
 
     return (
       <Card key={sectionId} className="mb-4">

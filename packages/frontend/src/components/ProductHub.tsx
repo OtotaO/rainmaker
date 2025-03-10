@@ -21,7 +21,7 @@ const ProductHub: React.FC = () => {
   const [showLearningJournal, setShowLearningJournal] = useState(false);
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
   const [selectedIssue, setSelectedIssue] = useState<GitHubIssue | null>(null);
-  const [finalizedPRD, setFinalizedPRD] = useState<LeanPRDSchema | null>(null);
+  const [finalizedPRD, setFinalizedPRD] = useState<ImprovedLeanPRDSchema | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [activeProductHighLevelDescription, setActiveProductHighLevelDescription] = useState<ProductHighLevelDescriptionSchema | null>(null);
   // Introduce a Single Workflow State
@@ -56,7 +56,14 @@ const ProductHub: React.FC = () => {
       reader.onload = (event) => {
         try {
           const json = JSON.parse(event.target?.result as string);
-          setFinalizedPRD(json);
+          
+          // Ensure the JSON conforms to ImprovedLeanPRDSchema by adding improvements array if not present
+          const improvedJson = {
+            ...json,
+            improvements: json.improvements || []
+          };
+          
+          setFinalizedPRD(improvedJson);
           // Update onClick Handler
           setActiveWorkflow(WORKFLOW_PRD_CREATION_EDITING);
         } catch (error) {

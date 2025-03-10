@@ -1,4 +1,4 @@
-import type { FinalizedPRD, ImprovedLeanPRDSchema } from '../../../shared/src/types';
+import type { FinalizedPRD, GitHubIssue, ImprovedLeanPRDSchema } from '../../../shared/src/types';
 
 export interface PRDGeneratorProps {
   finalizedPRD: ImprovedLeanPRDSchema;

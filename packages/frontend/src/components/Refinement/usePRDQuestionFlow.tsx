@@ -1,11 +1,21 @@
 // ./packages/frontend/src/components/Refinement/usePRDQuestionFlow.ts
 import { useState } from 'react';
+import * as z from 'zod';
+import type { infer as zInfer } from 'zod';
 import type { ImprovedLeanPRDSchema, ProductHighLevelDescriptionSchema } from '../../../../shared/src/types';
 
+const prdQuestionFlowInput = z.object({
+  improvedDescription: z.string(),
+  successMetric: z.string(),
+  criticalRisk: z.string(),
+}).partial();
+
+type prdQuestionFlowInputType = zInfer<typeof prdQuestionFlowInput>
+
 const PRD_QUESTIONS = [
-  { id: "1_SPEC", text: "What's the feature in one sentence?" },
-  { id: "2_SUCCESS_METRIC", text: "How do we measure success in 7 days?" },
-  { id: "3_GOTCHAS", text: "What's the one thing that could kill this feature?" },
+  { id: "improvedDescription", text: "What's the feature in one sentence?" },
+  { id: "successMetric", text: "How do we measure success in 7 days?" },
+  { id: "criticalRisk", text: "What's the one thing that could kill this feature?" },
 ] as const;
 
 type QuestionId = typeof PRD_QUESTIONS[number]['id'];
@@ -21,9 +31,9 @@ type QuestionId = typeof PRD_QUESTIONS[number]['id'];
 
 const PRD_QUESTION_TO_PROMPT: Record<
   QuestionId,
-  (...args: string[]) => string // Change here: Accepts variable number of string arguments
+  (userInput: string, productName: string, productDescription: string, ...args: string[]) => string
 > = {
-  '1_SPEC': (userInput: string, productName: string, productDescription: string) => `
+  'improvedDescription': (userInput: string, productName: string, productDescription: string) => `
 This is a new feature proposal for ${productName}.
 
 Here's a brief outline of ${productName}'s current product line - up as well as their tech stack:
@@ -62,7 +72,7 @@ Why this is better: [Now share the output of <internal-reasoning-1> as a priorit
 5. Just return the markdown - make sure to line wrap at 80 characters
 </response-text-formatting>
 `,
-  '2_SUCCESS_METRIC': (improvedDescription: string, userInput: string, productName: string, productDescription: string) =>
+  'successMetric': (improvedDescription: string, userInput: string, productName: string, productDescription: string) =>
     `
 This is a new feature proposal for ${productName}.
 
@@ -103,7 +113,7 @@ Why this is better: [Now share the output of <internal-reasoning-1> as a priorit
 5. Just return the markdown - make sure to line wrap at 80 characters
 </response-text-formatting>
 `,
-  '3_GOTCHAS': (improvedDescription: string, improvedSuccessMetric: string, userInput: string, productName: string, productDescription: string) =>
+  'criticalRisk': (improvedDescription: string, improvedSuccessMetric: string, userInput: string, productName: string, productDescription: string) =>
     `
 This is a new feature proposal for ${productName}.
 
@@ -154,19 +164,33 @@ Why this is better: [Now share the output of <internal-reasoning-1> as a priorit
 }
 
 // Anthropic API call function
-const callAnthropicAPI = async (currentStep: string, inputHistory: string[]): Promise<string> => {
+const callAnthropicAPI = async (
+  currentStep: string, 
+  inputHistory: string[],
+  activeProductHighLevelDescription?: ProductHighLevelDescriptionSchema
+): Promise<string> => {
   try {
     console.log("callAnthropicAPI called with currentStep:", currentStep, "and inputHistory:", inputHistory);
     let prompt = ''
 
     switch (currentStep) {
-      case '1_SPEC':
-        prompt = PRD_QUESTION_TO_PROMPT[currentStep](inputHistory[0])
+      case 'improvedDescription':
+        prompt = PRD_QUESTION_TO_PROMPT[currentStep](
+          inputHistory[0], 
+          inputHistory[1], 
+          activeProductHighLevelDescription?.name || '', 
+          activeProductHighLevelDescription?.description || ''
+        )
         break;
-      case '2_SUCCESS_METRIC':
-        prompt = PRD_QUESTION_TO_PROMPT[currentStep](inputHistory[0], inputHistory[1])
+      case 'successMetric':
+        prompt = PRD_QUESTION_TO_PROMPT[currentStep](
+          inputHistory[0], 
+          inputHistory[1], 
+          activeProductHighLevelDescription?.name || '', 
+          activeProductHighLevelDescription?.description || ''
+        )
         break;
-      case '3_GOTCHAS':
+      case 'criticalRisk':
         prompt = PRD_QUESTION_TO_PROMPT[currentStep](inputHistory[0], inputHistory[1], inputHistory[2])
         break;
     }
@@ -203,11 +227,19 @@ const callAnthropicAPI = async (currentStep: string, inputHistory: string[]): Pr
 };
 
 export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHighLevelDescriptionSchema, onComplete: (prd: ImprovedLeanPRDSchema) => void) => {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState<number>(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
-  const [aiResponses, setAiResponses] = useState<Record<string, string>>({});
+  const [aiResponses, setAiResponses] = useState<prdQuestionFlowInputType>({
+    improvedDescription: undefined,
+    successMetric: undefined,
+    criticalRisk: undefined
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [inputHistory, setInputHistory] = useState<[string, string, string]>(['', '', '']);
+  const [inputHistory, setInputHistory] = useState<prdQuestionFlowInputType>({
+    improvedDescription: undefined,
+    successMetric: undefined,
+    criticalRisk: undefined
+  });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -225,28 +257,35 @@ export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHig
     const promptFunction = PRD_QUESTION_TO_PROMPT[currentQuestion.id];
     console.log('prompt function:', promptFunction);
     console.log("userInput before promptFunction:", userInput);
-    const currentInputHistory: [string, string, string] = [...inputHistory];
+    const currentInputHistory: prdQuestionFlowInputType = {
+      ...inputHistory,
+      [PRD_QUESTIONS[currentStep].id]: userInput
+    };
 
     // Provide correct arguments based on currentStep:
     if (currentStep === 0) { // '1_SPEC'
-      currentInputHistory[currentStep] = promptFunction(userInput, activeProductHighLevelDescription.name, activeProductHighLevelDescription.description);
+      currentInputHistory[PRD_QUESTIONS[currentStep].id] = promptFunction(userInput, activeProductHighLevelDescription.name, activeProductHighLevelDescription.description);
     } else if (currentStep === 1) { // '2_SUCCESS_METRIC'
-      currentInputHistory[currentStep] = promptFunction(inputHistory[0], userInput, activeProductHighLevelDescription.name, activeProductHighLevelDescription.description); // Use previous responses
+      currentInputHistory[PRD_QUESTIONS[currentStep].id] = promptFunction(inputHistory[PRD_QUESTIONS[0].id]!, userInput, activeProductHighLevelDescription.name, activeProductHighLevelDescription.description); // Use previous responses
     } else if (currentStep === 2) { // '3_GOTCHAS'
-      currentInputHistory[currentStep] = promptFunction(inputHistory[0], inputHistory[1], userInput, activeProductHighLevelDescription.name, activeProductHighLevelDescription.description); // Use previous responses
+      currentInputHistory[PRD_QUESTIONS[currentStep].id] = promptFunction(inputHistory[PRD_QUESTIONS[0].id]!, inputHistory[PRD_QUESTIONS[1].id]!, userInput, activeProductHighLevelDescription.name, activeProductHighLevelDescription.description); // Use previous responses
     }
 
     console.log('current input history:', currentInputHistory);
     setInputHistory(currentInputHistory);
 
     try {
-      const aiResponse = await callAnthropicAPI(PRD_QUESTIONS[currentStep].id, currentInputHistory);
-      setAiResponses({ ...aiResponses, [currentStep]: aiResponse });
+      const aiResponse = await callAnthropicAPI(
+        PRD_QUESTIONS[currentStep].id, 
+        Object.values(currentInputHistory),
+        activeProductHighLevelDescription
+      );
+      setAiResponses({ ...aiResponses, [PRD_QUESTIONS[currentStep].id]: aiResponse });
     } catch (error) {
       console.error('Error in handleSubmit:', error);
       setAiResponses({
         ...aiResponses,
-        [currentStep]: "An error occurred while generating the AI response. Please try again.",
+        [PRD_QUESTIONS[currentStep].id]: "An error occurred while generating the AI response. Please try again.",
       });
     } finally {
       setIsLoading(false);

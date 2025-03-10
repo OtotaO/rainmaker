@@ -146,7 +146,7 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
             </div>
           ) : !selectedIssue && issues.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {issues.map((issue) => (
+              {issues.map((issue: GitHubIssue) => (
                 <Card
                   key={issue.id}
                   className={`cursor-pointer transition-all duration-200 ${selectedIssue?.id === issue.id ? 'border-blue-500 shadow-lg' : 'hover:border-gray-300'

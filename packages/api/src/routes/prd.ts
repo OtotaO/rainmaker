@@ -26,11 +26,11 @@ const contract = {
   generateFromSuggestions: {
     method: 'POST' as const,
     path: '/api/prd-suggestions-to-lean-prd',
-    body: z.tuple([
-      z.string(),  // improvedDescription
-      z.string(),  // successMetric
-      z.string(),  // criticalRisk
-    ]),
+    body: z.object({
+      improvedDescription: z.string(),
+      successMetric: z.string(),
+      criticalRisk: z.string(),
+    }),
     responses: {
       200: z.any(),
       500: ErrorResponse,
@@ -56,7 +56,7 @@ export const createPrdRouter = () => ({
    */
   generateFromSuggestions: async ({ body }: ServerInferRequest<typeof contract.generateFromSuggestions>) => {
     try {
-      const [improvedDescription, successMetric, criticalRisk] = body;
+      const { improvedDescription, successMetric, criticalRisk } = body;
       const result = await generateLeanPRD({
         improvedDescription,
         successMetric,
@@ -75,4 +75,4 @@ export const createPrdRouter = () => ({
       };
     }
   },
-}); 
+});
