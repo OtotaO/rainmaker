@@ -108,14 +108,14 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-8">
+    <div className="min-h-screen bg-background text-foreground p-8">
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center relative mb-8">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
+            <span className="text-primary">
               Product CoPilot
             </span>
-            <SparklesIcon className="absolute -top-6 -left-6 w-8 h-8 text-yellow-400" />
+            <SparklesIcon className="absolute -top-6 -left-6 w-8 h-8 text-primary" />
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -140,16 +140,16 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               >
-                <RefreshCwIcon className="h-8 w-8 text-blue-500" />
+                <RefreshCwIcon className="h-8 w-8 text-primary" />
               </motion.div>
-              <p className="mt-2 text-gray-600">Loading...</p>
+              <p className="mt-2 text-muted-foreground">Loading...</p>
             </div>
           ) : !selectedIssue && issues.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {issues.map((issue: GitHubIssue) => (
                 <Card
                   key={issue.id}
-                  className={`cursor-pointer transition-all duration-200 ${selectedIssue?.id === issue.id ? 'border-blue-500 shadow-lg' : 'hover:border-gray-300'
+                  className={`cursor-pointer transition-all duration-200 ${selectedIssue?.id === issue.id ? 'border-primary shadow-lg' : 'hover:border-border'
                     }`}
                   onClick={() => handleIssueSelect(issue)}
                 >
@@ -157,7 +157,7 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
                     <CardTitle>{issue.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-gray-600 truncate">{issue.body}</p>
+                    <p className="text-sm text-muted-foreground truncate">{issue.body}</p>
                   </CardContent>
                 </Card>
               ))}

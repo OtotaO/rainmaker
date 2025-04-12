@@ -11,7 +11,10 @@
     "lint": "bunx @biomejs/biome lint .",
     "check": "bunx @biomejs/biome check --apply .",
     "type-check": "bun --bun tsc --noEmit",
-    "verify": "bun run type-check && bun run build"
+    "verify": "bun run type-check && bun run build",
+    "test:themes": "vitest run src/__tests__/themes.test.ts",
+    "test:themes:e2e": "cypress run --spec 'cypress/e2e/themes.cy.ts'",
+    "test:themes:all": "npm run test:themes && npm run test:themes:e2e"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.24.3",

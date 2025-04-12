@@ -19,44 +19,100 @@ module.exports = {
     },
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+        background: {
+          DEFAULT: 'hsl(var(--background))',
+          oklch: 'var(--background)',
         },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+        'background-secondary': {
+          DEFAULT: 'hsl(var(--background-secondary))',
+          oklch: 'var(--background-secondary)',
         },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+        foreground: {
+          DEFAULT: 'hsl(var(--foreground))',
+          oklch: 'var(--foreground)',
         },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
+        'foreground-secondary': {
+          DEFAULT: 'hsl(var(--foreground-secondary))',
+          oklch: 'var(--foreground-secondary)',
         },
         card: {
           DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          oklch: 'var(--card)',
+          foreground: {
+            DEFAULT: 'hsl(var(--card-foreground))',
+            oklch: 'var(--card-foreground)',
+          }
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          oklch: 'var(--popover)',
+          foreground: {
+            DEFAULT: 'hsl(var(--popover-foreground))',
+            oklch: 'var(--popover-foreground)',
+          }
+        },
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          oklch: 'var(--primary)',
+          foreground: {
+            DEFAULT: 'hsl(var(--primary-foreground))',
+            oklch: 'var(--primary-foreground)',
+          }
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          oklch: 'var(--secondary)',
+          foreground: {
+            DEFAULT: 'hsl(var(--secondary-foreground))',
+            oklch: 'var(--secondary-foreground)',
+          }
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          oklch: 'var(--muted)',
+          foreground: {
+            DEFAULT: 'hsl(var(--muted-foreground))',
+            oklch: 'var(--muted-foreground)',
+          }
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          oklch: 'var(--accent)',
+          foreground: {
+            DEFAULT: 'hsl(var(--accent-foreground))',
+            oklch: 'var(--accent-foreground)',
+          }
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          oklch: 'var(--destructive)',
+          foreground: {
+            DEFAULT: 'hsl(var(--destructive-foreground))',
+            oklch: 'var(--destructive-foreground)',
+          }
+        },
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+          oklch: 'var(--border)',
+        },
+        input: {
+          DEFAULT: 'hsl(var(--input))',
+          oklch: 'var(--input)',
+        },
+        ring: {
+          DEFAULT: 'hsl(var(--ring))',
+          oklch: 'var(--ring)',
         },
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      fontFamily: {
+        sans: ['var(--font-sans)'],
+        heading: ['var(--font-heading)'],
+        mono: ['var(--font-mono)'],
       },
       keyframes: {
         'accordion-down': {

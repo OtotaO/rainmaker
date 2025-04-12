@@ -27,6 +27,8 @@ from idea to code in under an hour.
 ## Prerequisites
 
 - [Bun](https://bun.sh/) installed on your system
+- [Supabase CLI](https://supabase.com/docs/guides/cli) installed for local development
+- [Docker](https://docs.docker.com/get-docker/) for running Supabase locally
 
 ## Setup
 
@@ -50,6 +52,10 @@ from idea to code in under an hour.
      GITHUB_TOKEN=your_github_personal_access_token_here
      GITHUB_OWNER=f8n-ai
      GITHUB_REPO=rainmaker
+     DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
+     SUPABASE_URL=your_supabase_url
+     SUPABASE_ANON_KEY=your_supabase_anon_key
+     SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
      ```
 
 4. To obtain a GitHub Personal Access Token:
@@ -57,6 +63,22 @@ from idea to code in under an hour.
    - Click "Generate new token"
    - Give it a descriptive name and select the "repo" scope
    - Copy the generated token and paste it into your `.env` file
+
+5. Set up local Supabase:
+   ```
+   # Start local Supabase
+   cd packages/api
+   supabase start
+   
+   # This will provide your local Supabase URL and keys
+   # Add them to your .env file if they're not automatically set
+   ```
+
+6. Initialize the database:
+   ```
+   cd packages/api
+   bun prisma migrate dev
+   ```
 
 ## Running the Application
 
@@ -89,6 +111,11 @@ from idea to code in under an hour.
 │   │       ├── refinement/
 │   │       ├── github/
 │   │       └── server.ts
+│   │   └── supabase/
+│   │       ├── config.toml
+│   │       └── seed.sql
+│   │   └── prisma/
+│   │       └── schema.prisma 
 │   ├── frontend/
 │   │   └── src/
 │   │       ├── components/
@@ -97,8 +124,24 @@ from idea to code in under an hour.
 │       └── src/
 │           └── types.ts
 ├── README.md
+├── security-checklist.md
 └── package.json
 ```
+
+## Security
+
+Security is a critical aspect of Rainmaker. The project includes a comprehensive security checklist to ensure all best practices are followed:
+
+1. Review the [security-checklist.md](./security-checklist.md) file for detailed security guidelines
+2. Implement all required security measures during development
+3. Follow the security checklist before deploying to production
+
+Key security considerations include:
+- Row-Level Security (RLS) for Supabase
+- API rate limiting
+- CAPTCHA for authentication forms
+- Web Application Firewall (WAF) protection
+- Proper handling of API keys and secrets
 
 ## Testing
 
@@ -114,6 +157,12 @@ If you encounter any issues:
 
 1. Ensure all environment variables are correctly set in `packages/api/.env`.
 2. Check that you have the latest version of Bun installed.
-3. Clear your browser cache and restart the development server.
+3. If you're having issues with Supabase:
+   - Run `supabase status` to verify the local instance is running
+   - Try restarting with `supabase stop` followed by `supabase start`
+4. For database issues:
+   - Check connections with `bun prisma studio`
+   - Reset the database with `bun prisma migrate reset` if needed
+5. Clear your browser cache and restart the development server.
 
 For more help, please open an issue on the GitHub repository.
