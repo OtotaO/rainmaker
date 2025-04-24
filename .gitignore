@@ -181,3 +181,5 @@ dist
 .history
 
 .bun
+# Environment variables
+.env

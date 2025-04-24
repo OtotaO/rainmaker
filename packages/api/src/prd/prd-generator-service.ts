@@ -97,7 +97,14 @@ Focus on essential information needed for AI implementation. Be concise and spec
       return improvedPRD;
     } catch (error) {
       retries++;
-      logger.error(`Error in generateLeanPRD (Attempt ${retries}/${maxRetries})`, { error });
+      const err = error as Error;
+      logger.error(`Error in generateLeanPRD (Attempt ${retries}/${maxRetries})`, { 
+        error,
+        errorMessage: err.message,
+        errorStack: err.stack,
+        input,
+        anthropicKey: process.env.ANTHROPIC_API_KEY ? 'Set' : 'Not Set'
+      });
 
       if (retries >= maxRetries) {
         throw new PRDGenerationError(

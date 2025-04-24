@@ -65,7 +65,7 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
   const generatePRD = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/prd-suggestions-to-lean-prd', {
+      const response = await fetch('http://localhost:3001/api/prd/generateFromSuggestions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

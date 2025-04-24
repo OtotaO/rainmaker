@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { Anthropic } from '@anthropic-ai/sdk';
@@ -26,6 +27,28 @@ try {
   app.use(express.json());
   app.use(cors());
 
+  // Test Anthropic configuration
+  app.get('/api/test-anthropic', async (req, res) => {
+    try {
+      const message = await anthropic.messages.create({
+        model: 'claude-3-sonnet-20240229',
+        max_tokens: 100,
+        messages: [{ role: 'user', content: 'Say hello!' }]
+      });
+      res.json({ success: true, message });
+    } catch (error) {
+      const err = error as Error;
+      console.error('Anthropic test error:', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Set base path for all routes
+  app.use('/api', (req, res, next) => {
+    req.url = req.url.replace('/api', '');
+    next();
+  });
+
   // Combine all contracts
   const contract = {
     anthropic: anthropicRouter,
@@ -33,7 +56,7 @@ try {
     learningJournal: learningJournalRouter,
     prd: prdRouter,
     aiAssistance: aiAssistanceRouter,
-    github: githubRouter,
+    github: githubRouter
   };
 
   // Create router with implementations
@@ -43,7 +66,7 @@ try {
     learningJournal: createLearningJournalRouter(learningJournalService),
     prd: createPrdRouter(),
     aiAssistance: createAiAssistanceRouter(learningJournalService),
-    github: createGithubRouter(),
+    github: createGithubRouter()
   });
 
   createExpressEndpoints(contract, router, app);
@@ -54,7 +77,6 @@ try {
 const port = 3001;
 
 app.listen(port, () => {
-  //Intentionally using console.log because we don't know if logger has been initialized yet/
   console.log(`Server is running on port ${port}`);
 });
 

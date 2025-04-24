@@ -25,7 +25,7 @@ const ErrorResponse = z.object({
 const contract = {
   generateFromSuggestions: {
     method: 'POST' as const,
-    path: '/api/prd-suggestions-to-lean-prd',
+    path: '/prd/generateFromSuggestions',
     body: z.object({
       improvedDescription: z.string(),
       successMetric: z.string(),
