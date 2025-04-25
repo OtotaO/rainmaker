@@ -191,7 +191,13 @@ const callAnthropicAPI = async (
         )
         break;
       case 'criticalRisk':
-        prompt = PRD_QUESTION_TO_PROMPT[currentStep](inputHistory[0], inputHistory[1], inputHistory[2])
+        prompt = PRD_QUESTION_TO_PROMPT[currentStep](
+          inputHistory[0], 
+          inputHistory[1], 
+          inputHistory[2], 
+          activeProductHighLevelDescription?.name || '', 
+          activeProductHighLevelDescription?.description || ''
+        )
         break;
     }
 
@@ -294,6 +300,8 @@ export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHig
     if (currentStep < PRD_QUESTIONS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
+      // Ensure generatePRD is called after the third step
+      console.log("Final step completed, generating PRD...");
       await generatePRD();
     }
   };
@@ -301,13 +309,24 @@ export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHig
   const generatePRD = async () => {
     setIsLoading(true);
     try {
-      console.log("AI response:", aiResponses)
-      const response = await fetch('http://localhost:3001/api/prd-suggestions-to-lean-prd', {
+      console.log("AI response:", aiResponses);
+      
+      // Make sure we have all the required responses
+      if (!aiResponses.improvedDescription || !aiResponses.successMetric || !aiResponses.criticalRisk) {
+        console.error("Missing required responses for PRD generation", aiResponses);
+        throw new Error("Missing required responses for PRD generation");
+      }
+      
+      const response = await fetch('http://localhost:3001/api/prd/generateFromSuggestions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(aiResponses)
+        body: JSON.stringify({
+          improvedDescription: aiResponses.improvedDescription,
+          successMetric: aiResponses.successMetric,
+          criticalRisk: aiResponses.criticalRisk
+        })
       });
 
       if (!response.ok) {
@@ -315,6 +334,7 @@ export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHig
       }
 
       const data: ImprovedLeanPRDSchema = await response.json();
+      console.log("PRD generated successfully:", data);
       onComplete(data);
     } catch (error) {
       console.error('Error generating PRD:', error);

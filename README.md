@@ -151,11 +151,47 @@ Run the test suite with:
 bun test
 ```
 
+## Anthropic Integration
+
+Rainmaker uses Anthropic's Claude AI model to power various features:
+
+1. **PRD Generation**: Generates lean PRDs from user suggestions
+2. **Acceptance Criteria**: Generates acceptance criteria for features
+3. **Epic Task Breakdown**: Breaks down PRDs into epics and tasks
+4. **MVP Prioritization**: Prioritizes features for MVP development
+
+The integration uses the Anthropic Claude 3.5 Sonnet model (claude-3-5-sonnet-20240620) for all AI operations.
+
+### Recent Improvements
+
+The Anthropic integration has been enhanced with the following improvements:
+
+1. **Robust API Key Handling**: The application now reads the API key directly from the .env file, ensuring consistent usage throughout the application.
+2. **Fixed PRD Question Flow**: Fixed an issue where the PRD question flow would repeat the third question instead of proceeding to generate the PRD.
+3. **Enhanced Error Handling**: Added validation to ensure all required responses are available before attempting to generate the PRD.
+4. **Improved Logging**: Added additional logging to help with debugging and troubleshooting.
+
+### Testing the Anthropic Integration
+
+You can test the Anthropic integration by running:
+
+```bash
+cd packages/api
+bun run src/test-anthropic.ts
+```
+
+Or by making a request to the test endpoint:
+
+```bash
+curl http://localhost:3001/api/test-anthropic
+```
+
 ## Troubleshooting
 
 If you encounter any issues:
 
 1. Ensure all environment variables are correctly set in `packages/api/.env`.
+2. Verify that your Anthropic API key is valid and has sufficient quota.
 2. Check that you have the latest version of Bun installed.
 3. If you're having issues with Supabase:
    - Run `supabase status` to verify the local instance is running

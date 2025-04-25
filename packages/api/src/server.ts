@@ -6,6 +6,8 @@ import { LearningJournalService } from './learningJournalService';
 import { PrismaClient } from '.prisma/client';
 import cors from 'cors';
 import { logger } from './lib/logger';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import { anthropicRouter, createAnthropicRouter } from './routes/anthropic';
 import { productsRouter, createProductsRouter } from './routes/products';
@@ -14,6 +16,12 @@ import { prdRouter, createPrdRouter } from './routes/prd';
 import { aiAssistanceRouter, createAiAssistanceRouter } from './routes/ai-assistance';
 import { githubRouter, createGithubRouter } from './routes/github';
 
+// Read the API key directly from the .env file
+const envFilePath = path.resolve(__dirname, '../.env');
+const envFileContent = fs.readFileSync(envFilePath, 'utf8');
+const apiKeyMatch = envFileContent.match(/ANTHROPIC_API_KEY=(.+)/);
+const apiKey = apiKeyMatch ? apiKeyMatch[1] : process.env.ANTHROPIC_API_KEY;
+
 const app = express();
 const s = initServer();
 
@@ -21,8 +29,12 @@ try {
   const prisma = new PrismaClient();
   const learningJournalService = new LearningJournalService(prisma);
   const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
+    apiKey: apiKey,
   });
+
+  console.log('Anthropic API Key loaded:', apiKey ? 'Yes' : 'No');
+  console.log('API Key length:', apiKey?.length || 0);
+  console.log('API Key prefix:', apiKey?.substring(0, 15) || 'none');
 
   app.use(express.json());
   app.use(cors());
@@ -30,8 +42,11 @@ try {
   // Test Anthropic configuration
   app.get('/api/test-anthropic', async (req, res) => {
     try {
+      console.log('API Key length:', apiKey?.length || 0);
+      console.log('API Key prefix:', apiKey?.substring(0, 15) || 'none');
+      
       const message = await anthropic.messages.create({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-3-5-sonnet-20240620',
         max_tokens: 100,
         messages: [{ role: 'user', content: 'Say hello!' }]
       });
