@@ -1,9 +1,16 @@
 // File: packages/frontend/src/__tests__/Refinement.test.tsx
 
 import React from 'react';
-import { vi, expect, test, describe } from 'vitest'
+import { expect, test, describe } from 'vitest'
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import Refinement from '../components/Refinement';
+
+// Mock document object for testing
+global.document = {
+  body: {},
+  createElement: () => ({}),
+  documentElement: {},
+} as any;
 
 describe('Refinement Component', () => {
   test('renders initial review step', () => {
@@ -14,7 +21,7 @@ describe('Refinement Component', () => {
   });
 
   test('proceeds through refinement steps', async () => {
-    const mockOnComplete = vi.fn()
+    const mockOnComplete = jest.fn()
     const { getByText, getByRole } = render(<Refinement initialPRD="Test PRD" onComplete={mockOnComplete} />);
 
     // Initial Review
