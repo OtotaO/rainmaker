@@ -27,7 +27,25 @@ export const generateAcceptanceCriteria = async (feature: string) => {
     }
 
     const content = response.content[0].text;
-    const criteria = JSON.parse(content);
+    
+    // Handle both JSON and plain text responses
+    let criteria;
+    try {
+      // Try to parse as JSON
+      criteria = JSON.parse(content);
+    } catch (parseError) {
+      // If JSON parsing fails, extract criteria from text
+      // Split by newlines and clean up
+      criteria = content
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0 && !line.startsWith('```') && !line.includes('Feature:'));
+    }
+    
+    // Ensure criteria is an array
+    if (!Array.isArray(criteria)) {
+      criteria = [content];
+    }
 
     return { criteria };
   } catch (error) {

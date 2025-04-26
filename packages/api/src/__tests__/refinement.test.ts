@@ -1,9 +1,11 @@
 // File: packages/api/src/__tests__/refinement.test.ts
 
-import { expect, test, describe } from 'vitest';
+import { expect, test, describe, vi } from 'vitest';
 import { refinementProcess } from '../refinement';
 
 const { epicTaskBreakdown, mvpPrioritization, generateAcceptanceCriteria } = refinementProcess;
+
+// Note: Mocks for Anthropic and Instructor are defined in vitest.setup.ts
 
 describe('Refinement Process', () => {
   test('epicTaskBreakdown should return epics and tasks', async () => {

@@ -145,10 +145,55 @@ Key security considerations include:
 
 ## Testing
 
-Run the test suite with:
+The project uses Vitest for API and frontend testing, and Jest for schema testing. Run the full test suite with:
 
-```
+```bash
 bun test
+```
+
+You can also run tests for specific packages:
+
+```bash
+# Run schema tests
+bun test:schema
+
+# Run API tests
+bun test:api
+
+# Run frontend tests
+bun test:frontend
+```
+
+### Test Structure
+
+- **Schema Tests**: Located in `packages/schema/src/__tests__/`
+- **API Tests**: Located in `packages/api/src/__tests__/`
+- **Frontend Tests**: Located in `packages/frontend/src/__tests__/`
+
+Each package has its own test configuration:
+- API: `packages/api/vitest.config.ts` and `packages/api/vitest.setup.ts`
+- Frontend: `packages/frontend/vitest.config.ts` and `packages/frontend/vitest.setup.ts`
+- Schema: `packages/schema/jest.config.js`
+
+### Mocking
+
+The test setup includes mocks for:
+- Anthropic API client
+- File system operations
+- GitHub API
+- Browser environment for frontend tests
+
+### Running Tests in Watch Mode
+
+During development, you can run tests in watch mode:
+
+```bash
+# Watch all tests
+bun test:watch
+
+# Watch specific package tests
+bun test:api:watch
+bun test:frontend:watch
 ```
 
 ## Anthropic Integration
@@ -164,12 +209,14 @@ The integration uses the Anthropic Claude 3.5 Sonnet model (claude-3-5-sonnet-20
 
 ### Recent Improvements
 
-The Anthropic integration has been enhanced with the following improvements:
+The application has been enhanced with the following improvements:
 
-1. **Robust API Key Handling**: The application now reads the API key directly from the .env file, ensuring consistent usage throughout the application.
-2. **Fixed PRD Question Flow**: Fixed an issue where the PRD question flow would repeat the third question instead of proceeding to generate the PRD.
-3. **Enhanced Error Handling**: Added validation to ensure all required responses are available before attempting to generate the PRD.
-4. **Improved Logging**: Added additional logging to help with debugging and troubleshooting.
+1. **Standardized Testing Framework**: Implemented Vitest for API and frontend testing with proper mocking and configuration.
+2. **Robust API Key Handling**: The application now reads the API key directly from the .env file, ensuring consistent usage throughout the application.
+3. **Fixed PRD Question Flow**: Fixed an issue where the PRD question flow would repeat the third question instead of proceeding to generate the PRD.
+4. **Enhanced Error Handling**: Added validation to ensure all required responses are available before attempting to generate the PRD.
+5. **Improved Logging**: Added additional logging to help with debugging and troubleshooting.
+6. **Flexible Response Handling**: The acceptanceCriteria service now handles both JSON and plain text responses from the AI model.
 
 ### Testing the Anthropic Integration
 

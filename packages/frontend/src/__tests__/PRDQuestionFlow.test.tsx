@@ -1,19 +1,19 @@
 // File: packages/frontend/src/__tests__/PRDQuestionFlow.test.tsx
 
 import React from 'react';
-import { expect, test, describe, beforeEach } from 'vitest';
+import { expect, test, describe, beforeEach, vi } from 'vitest';
 import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import { PRDQuestionFlow } from '../components/Refinement/PRDQuestionFlow';
 import { usePRDQuestionFlow } from '../components/Refinement/usePRDQuestionFlow';
 import type { ImprovedLeanPRDSchema } from '../../../shared/src/types';
 
 // Mock the usePRDQuestionFlow hook
-jest.mock('../components/Refinement/usePRDQuestionFlow', () => ({
-  usePRDQuestionFlow: jest.fn(),
+vi.mock('../components/Refinement/usePRDQuestionFlow', () => ({
+  usePRDQuestionFlow: vi.fn(),
 }));
 
 // Mock fetch for API calls
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('PRD Question Flow', () => {
   const mockActiveProductHighLevelDescription = {
@@ -24,7 +24,7 @@ describe('PRD Question Flow', () => {
     updatedAt: '2025-04-25T00:00:00.000Z',
   };
 
-  const mockOnComplete = jest.fn();
+  const mockOnComplete = vi.fn();
 
   const mockPRDQuestions = [
     { id: 'improvedDescription', text: 'What\'s the feature in one sentence?' },
@@ -33,7 +33,7 @@ describe('PRD Question Flow', () => {
   ];
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Setup default mock implementation
     (usePRDQuestionFlow as any).mockReturnValue({
@@ -41,8 +41,8 @@ describe('PRD Question Flow', () => {
       responses: {},
       aiResponses: {},
       isLoading: false,
-      handleSubmit: jest.fn(),
-      handleEdit: jest.fn(),
+      handleSubmit: vi.fn(),
+      handleEdit: vi.fn(),
       PRD_QUESTIONS: mockPRDQuestions,
     });
 
@@ -62,7 +62,7 @@ describe('PRD Question Flow', () => {
   });
 
   test('submits the form and moves to the next question', async () => {
-    const mockHandleSubmit = jest.fn((e) => {
+    const mockHandleSubmit = vi.fn((e) => {
       e.preventDefault();
       // Simulate moving to the next step
       (usePRDQuestionFlow as any).mockReturnValue({
@@ -71,7 +71,7 @@ describe('PRD Question Flow', () => {
         aiResponses: { 'improvedDescription': 'Improved test feature' },
         isLoading: false,
         handleSubmit: mockHandleSubmit,
-        handleEdit: jest.fn(),
+        handleEdit: vi.fn(),
         PRD_QUESTIONS: mockPRDQuestions,
       });
     });
@@ -82,7 +82,7 @@ describe('PRD Question Flow', () => {
       aiResponses: {},
       isLoading: false,
       handleSubmit: mockHandleSubmit,
-      handleEdit: jest.fn(),
+      handleEdit: vi.fn(),
       PRD_QUESTIONS: mockPRDQuestions,
     });
 
@@ -119,7 +119,7 @@ describe('PRD Question Flow', () => {
 
   test('completes all questions and calls onComplete', async () => {
     // Mock the generatePRD function
-    const mockGeneratePRD = jest.fn(async () => {
+    const mockGeneratePRD = vi.fn(async () => {
       // Simulate API call success
       const mockPRD: ImprovedLeanPRDSchema = {
         revisionInfo: {
@@ -166,12 +166,12 @@ describe('PRD Question Flow', () => {
         'successMetric': 'Improved test metric',
       },
       isLoading: false,
-      handleSubmit: jest.fn(async (e) => {
+      handleSubmit: vi.fn(async (e) => {
         e.preventDefault();
         // This should trigger generatePRD after the last question
         await mockGeneratePRD();
       }),
-      handleEdit: jest.fn(),
+      handleEdit: vi.fn(),
       PRD_QUESTIONS: mockPRDQuestions,
     });
 
@@ -205,8 +205,8 @@ describe('PRD Question Flow', () => {
       responses: {},
       aiResponses: {},
       isLoading: true,
-      handleSubmit: jest.fn(),
-      handleEdit: jest.fn(),
+      handleSubmit: vi.fn(),
+      handleEdit: vi.fn(),
       PRD_QUESTIONS: mockPRDQuestions,
     });
 
