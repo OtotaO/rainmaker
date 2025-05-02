@@ -90,6 +90,7 @@ export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({ activeProductH
                   />
                   <ArrowRightIcon className="absolute right-4 bottom-4 w-6 h-6 text-gray-400" />
                 </div>
+                <div className="space-y-4">
                 <motion.button
                   type="submit"
                   className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
@@ -109,6 +110,31 @@ export const PRDQuestionFlow: React.FC<PRDQuestionFlowProps> = ({ activeProductH
                     'Submit'
                   )}
                 </motion.button>
+                
+                {/* Show "Create PRD" button only on the third question */}
+                {currentStep === 2 && responses[PRD_QUESTIONS[0].id] && responses[PRD_QUESTIONS[1].id] && (
+                  <div className="pt-4 border-t border-gray-200 mt-4">
+                    <p className="text-sm text-gray-500 mb-3">
+                      You can proceed directly to creating the PRD based on your answers:
+                    </p>
+                    <motion.button
+                      type="button" // Not a submit button
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        // Just use the form's submit handler
+                        // This will update the response first and then generate the PRD since we're on step 3
+                        await handleSubmit(e as any as React.FormEvent<HTMLFormElement>);
+                      }}
+                      className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-green-600 hover:to-teal-700 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isLoading}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {isLoading ? 'Processing...' : 'Create PRD Now'}
+                    </motion.button>
+                  </div>
+                )}
+              </div>
               </form>
             </motion.div>
           )
