@@ -9,6 +9,7 @@ from idea to code in under an hour.
 - Generates PRD, TRD, and detailed task specifications
 - Adaptive guidance throughout the process
 - Ensures high-quality, well-documented code
+- Type-safe configuration management with formal verification
 
 ## How It Works
 
@@ -217,6 +218,8 @@ The application has been enhanced with the following improvements:
 4. **Enhanced Error Handling**: Added validation to ensure all required responses are available before attempting to generate the PRD.
 5. **Improved Logging**: Added additional logging to help with debugging and troubleshooting.
 6. **Flexible Response Handling**: The acceptanceCriteria service now handles both JSON and plain text responses from the AI model.
+7. **Formal Verification**: Added Dafny-based formal verification for the ConfigSetting component, ensuring critical properties like uniqueness constraints and validation rules are mathematically proven.
+8. **Configuration Management**: Implemented a type-safe configuration system that supports multiple value types (string, number, boolean) with database persistence.
 
 ### Testing the Anthropic Integration
 

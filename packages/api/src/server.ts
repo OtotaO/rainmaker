@@ -15,6 +15,8 @@ import { learningJournalRouter, createLearningJournalRouter } from './routes/lea
 import { prdRouter, createPrdRouter } from './routes/prd';
 import { aiAssistanceRouter, createAiAssistanceRouter } from './routes/ai-assistance';
 import { githubRouter, createGithubRouter } from './routes/github';
+import { configRouter, createConfigRouter } from './routes/config';
+import { ConfigSettingService } from './config/configSettingService';
 
 const app = express();
 const s = initServer();
@@ -59,6 +61,9 @@ try {
     next();
   });
 
+  // Initialize services
+  const configSettingService = new ConfigSettingService(prisma);
+
   // Combine all contracts
   const contract = {
     anthropic: anthropicRouter,
@@ -66,7 +71,8 @@ try {
     learningJournal: learningJournalRouter,
     prd: prdRouter,
     aiAssistance: aiAssistanceRouter,
-    github: githubRouter
+    github: githubRouter,
+    config: configRouter
   };
 
   // Create router with implementations
@@ -76,7 +82,8 @@ try {
     learningJournal: createLearningJournalRouter(learningJournalService),
     prd: createPrdRouter(),
     aiAssistance: createAiAssistanceRouter(learningJournalService),
-    github: createGithubRouter()
+    github: createGithubRouter(),
+    config: createConfigRouter(configSettingService)
   });
 
   createExpressEndpoints(contract, router, app);

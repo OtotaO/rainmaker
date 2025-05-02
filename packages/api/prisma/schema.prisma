@@ -40,3 +40,17 @@ model AIAssistanceLevel {
   level       Int
   explanation String
 }
+
+model ConfigSetting {
+  id           String    @id @default(uuid())
+  key          String    @unique
+  value        String    // Stores JSON stringified value for non-string types
+  description  String?
+  category     String?
+  isEncrypted  Boolean   @default(false)
+  lastModified DateTime  @default(now()) @updatedAt
+  version      Int       @default(1)
+
+  @@index([key])
+  @@index([category])
+}
