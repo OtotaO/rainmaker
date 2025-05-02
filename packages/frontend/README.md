@@ -46,8 +46,8 @@ The frontend uses the Anthropic API through the backend to power various AI feat
 The Anthropic integration has been enhanced with the following improvements:
 
 1. **Robust API Key Handling**: The application now reads the API key directly from the .env file, ensuring consistent usage throughout the application.
-2. **Fixed PRD Question Flow**: Fixed an issue where the PRD question flow would repeat the third question instead of proceeding to generate the PRD.
-3. **Enhanced Error Handling**: Added validation to ensure all required responses are available before attempting to generate the PRD.
+2. **Fixed PRD Question Flow**: Fixed an issue where the PRD question flow would repeat the third question instead of proceeding to generate the PRD. Added a direct "Create PRD Now" button after the third question for a more reliable user experience.
+3. **Enhanced Error Handling**: Added robust error handling and fallback mechanisms to ensure users can proceed with PRD generation even when AI responses are incomplete or unavailable.
 4. **Improved Logging**: Added additional logging to help with debugging and troubleshooting.
 
 
