@@ -206,7 +206,7 @@ Rainmaker uses Anthropic's Claude AI model to power various features:
 3. **Epic Task Breakdown**: Breaks down PRDs into epics and tasks
 4. **MVP Prioritization**: Prioritizes features for MVP development
 
-The integration uses the Anthropic Claude 3.7 Sonnet (claude-3-7-sonnet-20250219) model for all AI operations.
+The integration uses the Anthropic Claude 3 Sonnet (claude-3-sonnet-20240229) model for all AI operations.
 
 ### Recent Improvements
 
