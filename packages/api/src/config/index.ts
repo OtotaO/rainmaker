@@ -13,7 +13,7 @@ dotenv.config();
 const ConfigSchema = z.object({
   anthropic: z.object({
     apiKey: z.string().min(1, 'Anthropic API key is required'),
-    model: z.string().default('claude-3-7'),
+    model: z.string().default('claude-3-7-sonnet-latest'),
     maxTokens: z.number().int().positive().default(3000),
     timeout: z.number().int().positive().default(30000),
     maxRetries: z.number().int().positive().default(3),
@@ -45,7 +45,7 @@ function loadConfigFromEnvironment() {
   return {
     anthropic: {
       apiKey: anthropicApiKey || '',
-      model: process.env.ANTHROPIC_MODEL || 'claude-3-7',
+      model: process.env.ANTHROPIC_MODEL || 'claude-3-7-sonnet-latest',
       maxTokens: process.env.ANTHROPIC_MAX_TOKENS ? parseInt(process.env.ANTHROPIC_MAX_TOKENS, 10) : 3000,
       timeout: process.env.ANTHROPIC_TIMEOUT ? parseInt(process.env.ANTHROPIC_TIMEOUT, 10) : 30000,
       maxRetries: process.env.ANTHROPIC_MAX_RETRIES ? parseInt(process.env.ANTHROPIC_MAX_RETRIES, 10) : 3,

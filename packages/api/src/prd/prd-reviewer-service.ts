@@ -24,7 +24,7 @@ export const reviewLeanPRD = async (
 
       const result = await Promise.race([
         instructor.chat.completions.create({
-          model: 'claude-3-7',
+          model: 'claude-3-7-sonnet-latest',
           max_tokens: 1500,
           messages: [
             {
