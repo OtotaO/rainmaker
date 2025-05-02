@@ -6,8 +6,14 @@ import * as path from 'path';
 // Read the API key directly from the .env file
 const envFilePath = path.resolve(__dirname, '../.env');
 const envFileContent = fs.readFileSync(envFilePath, 'utf8');
-const apiKeyMatch = envFileContent.match(/ANTHROPIC_API_KEY=(.+)/);
-const apiKey = apiKeyMatch ? apiKeyMatch[1] : process.env.ANTHROPIC_API_KEY;
+// Use a more specific regex to extract just the API key value and trim whitespace
+const apiKeyMatch = envFileContent.match(/ANTHROPIC_API_KEY=([^#\n\r]+)/);
+let apiKey = apiKeyMatch ? apiKeyMatch[1].trim() : process.env.ANTHROPIC_API_KEY;
+
+// Remove any quotes that might be around the key
+if (apiKey) {
+  apiKey = apiKey.replace(/^['"]|['"]$/g, '').trim();
+}
 
 console.log('API Key length:', apiKey?.length);
 console.log('API Key prefix:', apiKey?.substring(0, 15));
