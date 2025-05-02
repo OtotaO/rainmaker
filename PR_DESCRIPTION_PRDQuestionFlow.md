@@ -1,7 +1,7 @@
-# Fix PRD Question Flow with Create PRD Now Button
+# Fix PRD Question Flow and Update to Claude 3.7
 
 ## Summary
-This PR fixes a critical issue where the PRD question flow would repeat the third question instead of proceeding to generate the PRD. The implementation adds robust error handling and a direct "Create PRD Now" button to improve user experience.
+This PR fixes a critical issue where the PRD question flow would repeat the third question instead of proceeding to generate the PRD. Additionally, it updates all Anthropic API calls to use the latest Claude 3.7 model instead of older models. The implementation adds robust error handling and a direct "Create PRD Now" button to improve user experience.
 
 ## Implementation Details
 
