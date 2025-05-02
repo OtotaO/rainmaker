@@ -32,9 +32,12 @@ type Config = z.infer<typeof ConfigSchema>;
 // Helper function to load environment variables
 function loadConfigFromEnvironment() {
   // Get values from environment with specific error handling
-  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+  let anthropicApiKey = process.env.ANTHROPIC_API_KEY;
   if (!anthropicApiKey) {
     logger.error('Anthropic API key is missing');
+  } else {
+    // Ensure API key is properly trimmed and has no quotes
+    anthropicApiKey = anthropicApiKey.trim().replace(/^['"]|['"]$/g, '');
   }
   
   const databaseUrl = process.env.DATABASE_URL;
