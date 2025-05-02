@@ -24,8 +24,12 @@ const s = initServer();
 try {
   const prisma = new PrismaClient();
   const learningJournalService = new LearningJournalService(prisma);
+  
+  // Ensure API key is clean of any whitespace or quotes
+  const sanitizedApiKey = anthropicConfig.apiKey.trim().replace(/^['"]|['"]$/g, '');
+  
   const anthropic = new Anthropic({
-    apiKey: anthropicConfig.apiKey,
+    apiKey: sanitizedApiKey,
   });
 
   logger.info('Anthropic configuration loaded', {
