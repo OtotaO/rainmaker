@@ -67,13 +67,13 @@ export const createAnthropicRouter = (anthropic: Anthropic) => ({
     try {
       logger.debug('Sending request to Anthropic:', {
         ...body,
-        model: 'claude-3-7',
+        model: 'claude-3-7-sonnet-20250219',
         max_tokens: 1000,
       });
 
       const rawResponse = await anthropic.messages.create({
         ...body,
-        model: 'claude-3-7',
+        model: 'claude-3-7-sonnet-20250219',
         max_tokens: 1000,
       });
 

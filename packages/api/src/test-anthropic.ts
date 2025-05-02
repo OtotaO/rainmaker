@@ -19,7 +19,7 @@ const anthropic = new Anthropic({
 async function testAnthropicAPI() {
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-3-7',
+      model: 'claude-3-7-sonnet-20250219',
       max_tokens: 100,
       messages: [{ role: 'user', content: 'Say hello!' }]
     });
