@@ -1,10 +1,11 @@
 import { createLLMClient } from 'llm-polyglot';
 import Instructor from '@instructor-ai/instructor';
 import { z } from 'zod';
+import { anthropicConfig } from '../config';
 
 const anthropic = createLLMClient({
   provider: 'anthropic',
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: anthropicConfig.apiKey,
 });
 
 const instructor = Instructor({ client: anthropic, mode: 'JSON' });
