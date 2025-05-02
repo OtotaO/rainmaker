@@ -5,6 +5,8 @@ import { LearningJournalService } from './learningJournalService';
 import { PrismaClient } from '.prisma/client';
 import cors from 'cors';
 import { logger } from './lib/logger';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // TODO: Move all config to the config module as a self-contained module
 import config, { anthropicConfig, serverConfig } from './config';
@@ -25,11 +27,28 @@ try {
   const prisma = new PrismaClient();
   const learningJournalService = new LearningJournalService(prisma);
   
-  // Ensure API key is clean of any whitespace or quotes
-  const sanitizedApiKey = anthropicConfig.apiKey.trim().replace(/^['"]|['"]$/g, '');
+  // Directly extract and clean the API key from the .env file
+  const envFilePath = path.resolve(__dirname, '../.env');
+  const envFileContent = fs.readFileSync(envFilePath, 'utf8');
+  const apiKeyMatch = envFileContent.match(/ANTHROPIC_API_KEY=([^\n\r#]+)/);
+  
+  if (!apiKeyMatch) {
+    logger.error('Could not find ANTHROPIC_API_KEY in .env file');
+    throw new Error('Anthropic API key missing in .env file');
+  }
+  
+  // Apply thorough cleaning
+  let directApiKey = apiKeyMatch[1];
+  directApiKey = directApiKey.trim().replace(/^["'`]|["'`]$/g, '').replace(/\s+/g, '');
+  
+  logger.info('Direct API key extraction', {
+    keyLength: directApiKey.length,
+    keyPrefix: directApiKey.substring(0, 10),
+    hasExpectedPrefix: directApiKey.startsWith('sk-ant-'),
+  });
   
   const anthropic = new Anthropic({
-    apiKey: sanitizedApiKey,
+    apiKey: directApiKey,
   });
 
   logger.info('Anthropic configuration loaded', {
