@@ -91,3 +91,31 @@ export default config;
 export const anthropicConfig = config.anthropic;
 export const serverConfig = config.server;
 export const databaseConfig = config.database;
+
+// Example of how to use the ConfigSetting service alongside static config
+// This can be used to retrieve dynamic configuration values that override static defaults
+/**
+ * Gets a configuration value from ConfigSetting if available, or falls back to a default value
+ * @param configService - The ConfigSettingService instance
+ * @param key - The configuration key to look up
+ * @param defaultValue - The default value to use if key is not found in ConfigSetting
+ * @returns The configuration value
+ * 
+ * Usage example:
+ * ```
+ * // Get a dynamic feature flag, defaulting to false if not configured
+ * const isFeatureEnabled = await getDynamicConfig(configService, 'features.newFeature.enabled', false);
+ * 
+ * // Get a dynamic API timeout, defaulting to the static config value
+ * const timeout = await getDynamicConfig(configService, 'api.timeout', config.anthropic.timeout);
+ * ```
+ */
+export async function getDynamicConfig<T>(configService: any, key: string, defaultValue: T): Promise<T> {
+  try {
+    const setting = await configService.getConfigSetting(key);
+    return setting ? setting.value as T : defaultValue;
+  } catch (error) {
+    logger.warn(`Failed to get dynamic config for ${key}, using default value`, { error });
+    return defaultValue;
+  }
+}
