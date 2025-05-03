@@ -59,7 +59,7 @@ export const FinalizedPRDDisplay: React.FC<FinalizedPRDDisplayProps> = ({ finali
           ) : (
             <p>{content.content}</p>
           )}
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-muted-foreground mt-2">
             Last Updated: {new Date().toLocaleString()} {/* Replace with actual timestamp */}
           </p>
         </CardContent>
@@ -107,7 +107,7 @@ export const FinalizedPRDDisplay: React.FC<FinalizedPRDDisplayProps> = ({ finali
   return (
     <div className="flex h-screen">
       {/* Left Column - Table of Contents */}
-      <div className={`w-1/4 bg-gray-100 p-4 ${tocExpanded ? '' : 'w-16'}`}>
+      <div className={`w-1/4 bg-background-secondary p-4 ${tocExpanded ? '' : 'w-16'}`}>
         <Button onClick={toggleToc} variant="ghost" className="mb-4 w-full justify-start">
           {tocExpanded ? <ChevronLeft className="mr-2" /> : <ChevronRight className="mr-2" />}
           {tocExpanded && "Table of Contents"}
@@ -149,13 +149,13 @@ export const FinalizedPRDDisplay: React.FC<FinalizedPRDDisplayProps> = ({ finali
 
         {/* Dev Tools: Drag and Drop Area */}
         <div
-          className={`fixed bottom-4 right-4 p-4 rounded-lg transition-all duration-300 ${isDragging ? 'bg-blue-100 border-2 border-blue-500' : 'bg-gray-100'
+          className={`fixed bottom-4 right-4 p-4 rounded-lg transition-all duration-300 ${isDragging ? 'bg-primary/10 border-2 border-primary' : 'bg-muted'
             }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <Upload className="w-6 h-6 text-gray-500" />
+          <Upload className="w-6 h-6 text-muted-foreground" />
           <span className="sr-only">Drag and drop JSON file here</span>
         </div>
       </div>
