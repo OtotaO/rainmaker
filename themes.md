@@ -145,6 +145,11 @@ All themes now use OKLCH color space for better color perception and manipulatio
 - Color value management (HSL and OKLCH)
 - OKLCH color space direct application
 - Tailwind CSS integration
+- Dark mode contrast in Table of Contents
+
+### 🔧 Recent Fixes
+- Fixed contrast issue in Table of Contents sidebar during dark mode by replacing hardcoded colors with theme-aware classes
+- Updated drag-and-drop UI elements to use theme variables
 
 ### ❌ Remaining Tasks
 
