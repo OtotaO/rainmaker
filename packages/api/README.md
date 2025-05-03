@@ -100,4 +100,14 @@ The Anthropic integration is used throughout the application for various AI-powe
 3. **Epic Task Breakdown**: Breaks down PRDs into epics and tasks
 4. **MVP Prioritization**: Prioritizes features for MVP development
 
-The integration uses the Anthropic Claude 3.5 Sonnet model (claude-3-5-sonnet-20240620) for all AI operations.
+The integration uses the Anthropic Claude 3.7 Sonnet model (claude-3-7-sonnet-latest) for all AI operations.
+
+### API Key Handling
+
+The application requires special handling for the Anthropic API key to ensure proper authentication:
+
+- The Anthropic API key is read directly from the .env file in server.ts
+- The key undergoes thorough sanitization to remove any whitespace, quotes, or other characters that might affect authentication
+- This approach prevents common authentication errors that can occur when API keys are passed through multiple layers of the application
+
+**Note for developers**: If you encounter "invalid x-api-key" authentication errors despite having a valid API key, ensure your key is properly formatted in the .env file (no trailing whitespace, quotes, or invisible characters). The application performs sanitization, but proper formatting in the source file is recommended.

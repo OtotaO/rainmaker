@@ -37,7 +37,7 @@ export type EpicTaskBreakdownSchema = z.infer<typeof EpicTaskBreakdownSchema>;
 export const epicTaskBreakdown = async (prd: string): Promise<EpicTaskBreakdownSchema> => {
   try {
     const result = await instructor.chat.completions.create({
-      model: 'claude-3-5-sonnet-20240620',
+      model: 'claude-3-7-sonnet-latest',
       max_tokens: 1000,
       messages: [
         {
