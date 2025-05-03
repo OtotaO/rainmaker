@@ -1,10 +1,11 @@
 import { createLLMClient } from 'llm-polyglot';
 import Instructor from '@instructor-ai/instructor';
 import { z } from 'zod';
+import { anthropicConfig } from '../config';
 
 const anthropic = createLLMClient({
   provider: 'anthropic',
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: anthropicConfig.apiKey,
 });
 
 const instructor = Instructor({ client: anthropic, mode: 'JSON' });
@@ -36,7 +37,7 @@ export type EpicTaskBreakdownSchema = z.infer<typeof EpicTaskBreakdownSchema>;
 export const epicTaskBreakdown = async (prd: string): Promise<EpicTaskBreakdownSchema> => {
   try {
     const result = await instructor.chat.completions.create({
-      model: 'claude-3-5-sonnet-20240620',
+      model: 'claude-3-7-sonnet-latest',
       max_tokens: 1000,
       messages: [
         {

@@ -36,8 +36,16 @@ function loadConfigFromEnvironment() {
   if (!anthropicApiKey) {
     logger.error('Anthropic API key is missing');
   } else {
-    // Ensure API key is properly trimmed and has no quotes
-    anthropicApiKey = anthropicApiKey.trim().replace(/^['"]|['"]$/g, '');
+    // Ensure API key is properly trimmed and has no quotes or whitespace
+    anthropicApiKey = anthropicApiKey.trim();
+    anthropicApiKey = anthropicApiKey.replace(/^["'`]|["'`]$/g, ''); // Remove quotes at start/end
+    anthropicApiKey = anthropicApiKey.replace(/\s+/g, ''); // Remove any whitespace
+
+    logger.info('Anthropic API key processed', {
+      keyLength: anthropicApiKey.length,
+      keyPrefix: anthropicApiKey.substring(0, 10),
+      hasExpectedPrefix: anthropicApiKey.startsWith('sk-ant-'),
+    });
   }
   
   const databaseUrl = process.env.DATABASE_URL;

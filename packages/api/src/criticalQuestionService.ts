@@ -16,7 +16,7 @@
 
 //     try {
 //       const response = await this.anthropic.messages.create({
-//         model: 'claude-3-5-sonnet-20240620',
+//         model: 'claude-3-7-sonnet-latest',
 //         system:
 //           'You are an AI assistant tasked with generating critical questions for software projects.',
 //         messages: [{ role: 'user', content: prompt }],

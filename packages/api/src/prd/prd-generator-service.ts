@@ -3,6 +3,7 @@
 import { validateAndSanitize, sanitizeInput } from '../lib/schema-utils';
 import { logger } from '../lib/logger';
 import { CustomError } from '../lib/custom-error';
+import { anthropicConfig } from '../config';
 import {
   FeatureInputSchema,
   FlexibleLeanPRDSchema,
@@ -103,7 +104,7 @@ Focus on essential information needed for AI implementation. Be concise and spec
         errorMessage: err.message,
         errorStack: err.stack,
         input,
-        anthropicKey: process.env.ANTHROPIC_API_KEY ? 'Set' : 'Not Set'
+        anthropicKey: anthropicConfig.apiKey ? 'Set' : 'Not Set'
       });
 
       if (retries >= maxRetries) {
