@@ -44,7 +44,6 @@
     "@swc/core",
     "esbuild",
     "prisma",
-    "protobufjs",
-    "supabase"
+    "protobufjs"
   ]
 }

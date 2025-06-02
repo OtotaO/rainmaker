@@ -28,8 +28,7 @@ from idea to code in under an hour.
 ## Prerequisites
 
 - [Bun](https://bun.sh/) installed on your system
-- [Supabase CLI](https://supabase.com/docs/guides/cli) installed for local development
-- [Docker](https://docs.docker.com/get-docker/) for running Supabase locally
+- [PostgreSQL](https://www.postgresql.org/) installed via Homebrew
 
 ## Setup
 
@@ -53,10 +52,7 @@ from idea to code in under an hour.
      GITHUB_TOKEN=your_github_personal_access_token_here
      GITHUB_OWNER=f8n-ai
      GITHUB_REPO=rainmaker
-     DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
-     SUPABASE_URL=your_supabase_url
-     SUPABASE_ANON_KEY=your_supabase_anon_key
-     SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rainmaker"
      ```
 
 4. To obtain a GitHub Personal Access Token:
@@ -65,14 +61,10 @@ from idea to code in under an hour.
    - Give it a descriptive name and select the "repo" scope
    - Copy the generated token and paste it into your `.env` file
 
-5. Set up local Supabase:
+5. Ensure PostgreSQL is running:
    ```
-   # Start local Supabase
-   cd packages/api
-   supabase start
-   
-   # This will provide your local Supabase URL and keys
-   # Add them to your .env file if they're not automatically set
+   brew services start postgresql
+   createdb rainmaker || true
    ```
 
 6. Initialize the database:
@@ -112,9 +104,6 @@ from idea to code in under an hour.
 │   │       ├── refinement/
 │   │       ├── github/
 │   │       └── server.ts
-│   │   └── supabase/
-│   │       ├── config.toml
-│   │       └── seed.sql
 │   │   └── prisma/
 │   │       └── schema.prisma 
 │   ├── frontend/
@@ -138,7 +127,7 @@ Security is a critical aspect of Rainmaker. The project includes a comprehensive
 3. Follow the security checklist before deploying to production
 
 Key security considerations include:
-- Row-Level Security (RLS) for Supabase
+- Row-Level Security (RLS) for PostgreSQL
 - API rate limiting
 - CAPTCHA for authentication forms
 - Web Application Firewall (WAF) protection
@@ -243,9 +232,9 @@ If you encounter any issues:
 1. Ensure all environment variables are correctly set in `packages/api/.env`.
 2. Verify that your Anthropic API key is valid and has sufficient quota.
 2. Check that you have the latest version of Bun installed.
-3. If you're having issues with Supabase:
-   - Run `supabase status` to verify the local instance is running
-   - Try restarting with `supabase stop` followed by `supabase start`
+3. If you're having issues with PostgreSQL:
+   - Run `brew services list` to verify the service is running
+   - Restart with `brew services restart postgresql`
 4. For database issues:
    - Check connections with `bun prisma studio`
    - Reset the database with `bun prisma migrate reset` if needed

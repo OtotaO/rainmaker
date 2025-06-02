@@ -87,6 +87,21 @@ export function validateRelations(
           );
         }
       }
+    } else if (field instanceof z.ZodArray) {
+      const elementType = field.element;
+      if (elementType instanceof z.ZodObject) {
+        const meta = elementType.description ? JSON.parse(elementType.description) : {};
+        if (meta.relation) {
+          const [targetModel] = meta.relation.split('.');
+          if (!schemaMap.has(targetModel)) {
+            throw new SchemaValidationError(
+              `Relation target model '${targetModel}' not found in schema map`,
+              key,
+              model
+            );
+          }
+        }
+      }
     }
   }
-} 
+}

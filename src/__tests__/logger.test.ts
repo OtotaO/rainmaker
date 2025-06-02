@@ -60,8 +60,7 @@ describe('Logger', () => {
     logger.info('test message', { data: 123 });
     
     expect(consoleSpies.info).toHaveBeenCalledWith(
-      expect.stringContaining('[INFO]'),
-      expect.stringContaining('test message'),
+      expect.stringContaining('[INFO] test message'),
       expect.objectContaining({ data: 123 })
     );
   });
@@ -71,8 +70,7 @@ describe('Logger', () => {
     logger.info('test message');
     
     expect(consoleSpies.info).toHaveBeenCalledWith(
-      expect.stringContaining('[INFO]'),
-      expect.stringContaining('test message')
+      expect.stringContaining('[INFO] test message')
     );
   });
 }); 

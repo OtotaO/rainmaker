@@ -1,11 +1,11 @@
 # Rainmaker Security Checklist
 
-This checklist covers essential security measures for the Rainmaker application, with particular focus on Supabase implementation.
+This checklist covers essential security measures for the Rainmaker application using a standard PostgreSQL setup.
 
 ## Database Security
 
 - [ ] **Enable Row-Level Security (RLS)**
-  - Turn on RLS in Supabase from day one
+  - Enable PostgreSQL RLS on each table from day one
   - Create policies for each table that ensure users can only access their own data
   - Example policy:
     ```sql
@@ -16,14 +16,13 @@ This checklist covers essential security measures for the Rainmaker application,
     ```
 
 - [ ] **Database Access Control**
-  - Use Supabase service role key only in secure backend environments
-  - Never expose the service role key in frontend code
-  - Use the anon key for public client access with appropriate RLS policies
+  - Use secure database credentials stored in backend environments only
+  - Never expose database passwords in frontend code
 
 ## API Security
 
 - [ ] **Rate Limit API Endpoints**
-  - Implement rate limiting in Supabase Edge Functions
+  - Implement rate limiting in your API layer
   - Consider using Vercel Middleware for additional rate limiting
   - Monitor for unusual traffic patterns
 
@@ -55,9 +54,6 @@ This checklist covers essential security measures for the Rainmaker application,
 - [ ] **Keep API Keys Secret**
   - Store all keys in `.env` files (never in version control)
   - Required keys:
-    - `SUPABASE_URL`
-    - `SUPABASE_ANON_KEY`
-    - `SUPABASE_SERVICE_ROLE_KEY`
     - `DATABASE_URL`
     - `ANTHROPIC_API_KEY`
     - `GITHUB_TOKEN`
@@ -72,7 +68,7 @@ This checklist covers essential security measures for the Rainmaker application,
 ## Monitoring and Logging
 
 - [ ] **Monitor and Log Activity**
-  - Implement logging using Supabase logs
+  - Implement logging using PostgreSQL logs
   - Consider additional logging with Vercel Analytics, LogSnag, or LogRocket
   - Pay attention to:
     - Failed login attempts

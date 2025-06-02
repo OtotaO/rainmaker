@@ -5,6 +5,7 @@ process.env.ANTHROPIC_API_KEY = 'test-api-key';
 process.env.GITHUB_OWNER = 'test-owner';
 process.env.GITHUB_REPO = 'test-repo';
 process.env.GITHUB_BRANCH = 'main';
+process.env.DATABASE_URL = 'postgres://localhost:5432/test';
 
 // Mock Anthropic client
 vi.mock('@anthropic-ai/sdk', () => {
