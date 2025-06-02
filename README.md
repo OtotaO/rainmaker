@@ -42,6 +42,7 @@ from idea to code in under an hour.
    ```
    bun install
    ```
+   Bun's lockfile `bun.lockb` ensures consistent dependency versions.
 
 3. Set up environment variables:
    - Copy `packages/api/.env.example` to `packages/api/.env`
@@ -135,23 +136,24 @@ Key security considerations include:
 
 ## Testing
 
-The project uses Vitest for API and frontend testing, and Jest for schema testing. Run the full test suite with:
+The project uses Vitest for API and frontend testing, and Jest for schema testing.
+Run the full test suite with **bun run** to invoke the configured scripts (avoid `bun test`, which uses Bun's built-in runner):
 
 ```bash
-bun test
+bun run test
 ```
 
 You can also run tests for specific packages:
 
 ```bash
 # Run schema tests
-bun test:schema
+bun run test:schema
 
 # Run API tests
-bun test:api
+bun run test:api
 
 # Run frontend tests
-bun test:frontend
+bun run test:frontend
 ```
 
 ### Test Structure
@@ -179,11 +181,11 @@ During development, you can run tests in watch mode:
 
 ```bash
 # Watch all tests
-bun test:watch
+bun run test:watch
 
 # Watch specific package tests
-bun test:api:watch
-bun test:frontend:watch
+bun run test:api:watch
+bun run test:frontend:watch
 ```
 
 ## Anthropic Integration
