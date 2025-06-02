@@ -22,5 +22,6 @@ generator client {
 }
 
 // Re-export types for convenience
-export * from './types/prisma'; 
+export * from './types/prisma';
 export * from './types/configSetting';
+export * from './types/enums';

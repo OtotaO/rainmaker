@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { validateFieldName, validateSchema, validateRelations } from '../utils/validation';
 import { SchemaValidationError } from '../types/prisma';
+import { StatusSchema } from '../../packages/schema/src/types/enums';
 
 describe('Validation Utilities', () => {
   describe('validateFieldName', () => {
@@ -30,7 +31,7 @@ describe('Validation Utilities', () => {
         age: z.number(),
         isActive: z.boolean(),
         createdAt: z.date(),
-        status: z.enum(['active', 'inactive']),
+        status: StatusSchema,
       });
 
       expect(() => validateSchema(validSchema)).not.toThrow();

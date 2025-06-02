@@ -51,6 +51,16 @@ function validateFieldType(field: z.ZodType, fieldName: string, model?: string):
     field instanceof z.ZodBoolean ||
     field instanceof z.ZodDate ||
     field instanceof z.ZodEnum ||
+    (field instanceof z.ZodUnion &&
+      (
+        field as z.ZodUnion<[
+          z.ZodLiteral<string>,
+          z.ZodLiteral<string>,
+          ...z.ZodLiteral<string>[]
+        ]>
+      )._def.options.every(
+        (opt: z.ZodLiteral<string>) => opt instanceof z.ZodLiteral
+      )) ||
     field instanceof z.ZodObject ||
     field instanceof z.ZodArray ||
     field instanceof z.ZodOptional ||

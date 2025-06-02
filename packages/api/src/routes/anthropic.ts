@@ -5,6 +5,7 @@
 
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
+import { MessageRoleSchema } from '../../../schema/src/types/enums';
 import type { ServerInferRequest } from '@ts-rest/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { logger } from '../lib/logger';
@@ -41,7 +42,7 @@ const contract = {
     path: '/api/anthropic',
     body: z.object({
       messages: z.array(z.object({
-        role: z.enum(['user', 'assistant']),
+        role: MessageRoleSchema,
         content: z.string(),
       })),
     }),
