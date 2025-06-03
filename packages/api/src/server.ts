@@ -21,6 +21,7 @@ import { configRouter, createConfigRouter } from './routes/config';
 import { componentsRouter, createComponentsRouter } from './routes/components';
 import buildRouter from './routes/build';
 import { ConfigSettingService } from './config/configSettingService';
+import intelligenceRouter from './routes/intelligence';
 
 const app = express();
 const s = initServer();
@@ -82,6 +83,9 @@ try {
 
   // Add the build orchestrator routes (Magic Button)
   app.use('/api/build', buildRouter);
+  
+  // Add the intelligence routes (Knowledge System)
+  app.use('/api/intelligence', intelligenceRouter);
 
   // Set base path for all routes
   app.use('/api', (req, res, next) => {

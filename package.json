@@ -17,7 +17,12 @@
     "test:api": "bun run --cwd packages/api test",
     "test:frontend": "bun run --cwd packages/frontend test",
     "test:watch": "bunx --bun concurrently \"bun run --cwd packages/api test:watch\" \"bun run --cwd packages/frontend test:watch\"",
-    "test:coverage": "bunx --bun concurrently \"bun run --cwd packages/api test:coverage\" \"bun run --cwd packages/frontend test:coverage\""
+    "test:coverage": "bunx --bun concurrently \"bun run --cwd packages/api test:coverage\" \"bun run --cwd packages/frontend test:coverage\"",
+    "verify": "cd verification && ./verify-all.sh",
+    "verify:compatibility": "cd verification && dafny verify component-compatibility.dfy",
+    "verify:schemas": "cd verification && dafny verify schema-consistency.dfy",
+    "verify:pipeline": "cd verification && dafny verify build-pipeline-invariants.dfy",
+    "verify:registry": "cd verification && dafny verify registry-expansion-specs.dfy"
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.3",

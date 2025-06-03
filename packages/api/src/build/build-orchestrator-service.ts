@@ -14,6 +14,7 @@
 
 import { z } from 'zod';
 import { componentRegistry } from '../components/registry';
+import { EXPANDED_REGISTRY, getExpandedComponentsByCategory } from '../components/expanded-registry-complete';
 import type { 
   CuratedComponent, 
   ComponentCategory, 
@@ -24,6 +25,7 @@ import { instructor } from '../lib/instructor';
 import { anthropicConfig } from '../config';
 import { logger } from '../lib/logger';
 import { createGitHubIssue } from '../github';
+import { componentIntelligence } from '../knowledge/knowledge-system';
 
 // Build request schema
 export const BuildRequestSchema = z.object({
@@ -144,6 +146,18 @@ export class BuildOrchestratorService {
         success: true 
       });
 
+      // Learn from this successful build
+      await componentIntelligence.learnFromBuild(
+        {
+          buildId,
+          success: true,
+          selectedStack,
+          generatedFiles,
+          createdIssues,
+        },
+        request.prd
+      );
+
       return {
         success: true,
         buildId,
@@ -164,6 +178,19 @@ export class BuildOrchestratorService {
         error: error instanceof Error ? error.message : 'Unknown error',
         processingTime 
       });
+
+      // Learn from this failed build
+      await componentIntelligence.learnFromBuild(
+        {
+          buildId,
+          success: false,
+          selectedStack: [],
+          generatedFiles: [],
+          createdIssues: [],
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        request.prd
+      );
 
       return {
         success: false,
@@ -307,34 +334,63 @@ Provide a comprehensive technical analysis.`
       reason: string;
     }> = [];
 
-    // Get recommended stack from registry
-    const recommendations = componentRegistry.getRecommendedStack(
-      analysis.primaryFramework,
-      analysis.requiredCategories
-    );
+    // For each required category, get intelligent recommendations
+    for (const category of analysis.requiredCategories) {
+      // Get AI-powered recommendations based on historical success
+      const intelligentRecs = await componentIntelligence.getIntelligentRecommendations(
+        analysis,
+        category
+      );
 
-    // Group by category and select the best component for each
-    const categoryMap = new Map<string, CuratedComponent>();
-    
-    recommendations.forEach(component => {
-      const existing = categoryMap.get(component.category);
-      if (!existing || component.repository.stars > existing.repository.stars) {
-        categoryMap.set(component.category, component);
+      // Get components from registry
+      const registryComponents = EXPANDED_REGISTRY.filter(component => 
+        component.frameworks.includes(analysis.primaryFramework) &&
+        component.category === category
+      );
+
+      // Merge intelligence with registry data
+      let bestComponent: CuratedComponent | null = null;
+      let bestScore = -1;
+
+      for (const component of registryComponents) {
+        // Calculate combined score
+        const intelligentScore = intelligentRecs.find(
+          (rec: any) => rec.component_id === component.id
+        );
+        
+        const historicalSuccess = intelligentScore?.success_count || 0;
+        const avgConfidence = intelligentScore?.avg_confidence || 0.5;
+        const stars = component.repository.stars;
+        
+        // Weighted score: 40% historical success, 30% confidence, 30% popularity
+        const score = (historicalSuccess * 0.4) + (avgConfidence * 0.3) + (stars / 100000 * 0.3);
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestComponent = component;
+        }
       }
-    });
 
-    // Build the selected stack with reasoning
-    categoryMap.forEach((component, category) => {
-      selectedStack.push({
-        category,
-        component,
-        reason: `Selected ${component.name} for ${category}: ${component.verification.notes || 'Rainmaker verified choice'}`,
-      });
-    });
+      // Fallback to highest stars if no intelligent recommendation
+      if (!bestComponent) {
+        bestComponent = registryComponents.reduce((best, current) => 
+          current.repository.stars > best.repository.stars ? current : best
+        , registryComponents[0]);
+      }
+
+      if (bestComponent) {
+        selectedStack.push({
+          category,
+          component: bestComponent,
+          reason: `Selected ${bestComponent.name} for ${category}: AI confidence ${bestScore.toFixed(2)} based on historical success`,
+        });
+      }
+    }
 
     // Add framework-specific defaults if not covered
-    if (analysis.primaryFramework === 'REACT' && !categoryMap.has('STATE_MANAGEMENT')) {
-      const zustand = componentRegistry.getById('zustand');
+    const hasStateManagement = selectedStack.some(s => s.category === 'STATE_MANAGEMENT');
+    if (analysis.primaryFramework === 'REACT' && !hasStateManagement) {
+      const zustand = EXPANDED_REGISTRY.find(c => c.id === 'zustand');
       if (zustand) {
         selectedStack.push({
           category: 'STATE_MANAGEMENT',

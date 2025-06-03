@@ -54,3 +54,113 @@ model ConfigSetting {
   @@index([key])
   @@index([category])
 }
+
+// Knowledge System Models
+
+model KnowledgeFact {
+  id           String   @id @default(uuid())
+  factId       String   @unique
+  content      String
+  metadata     Json
+  context      Json
+  entities     Json
+  uncertainty  Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  sourceRelationships  KnowledgeRelationship[] @relation("SourceFact")
+  targetRelationships  KnowledgeRelationship[] @relation("TargetFact")
+
+  @@index([factId])
+  @@index([createdAt])
+}
+
+model KnowledgeRelationship {
+  id               String   @id @default(uuid())
+  relationshipId   String   @unique
+  sourceFactId     String
+  targetFactId     String
+  type             String
+  metadata         Json
+  properties       Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  sourceFact       KnowledgeFact @relation("SourceFact", fields: [sourceFactId], references: [factId])
+  targetFact       KnowledgeFact @relation("TargetFact", fields: [targetFactId], references: [factId])
+
+  @@index([relationshipId])
+  @@index([sourceFactId])
+  @@index([targetFactId])
+  @@index([type])
+}
+
+model ComponentScore {
+  id                      String    @id @default(uuid())
+  componentId             String    @unique
+  successCount            Int       @default(0)
+  failureCount            Int       @default(0)
+  modificationCount       Int       @default(0)
+  totalUses               Int       @default(0)
+  averageUserSatisfaction Float?
+  lastSuccessAt           DateTime?
+  lastFailureAt           DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@index([componentId])
+  @@index([successCount])
+}
+
+model BuildHistory {
+  id              String   @id @default(uuid())
+  buildId         String   @unique
+  prdId           String
+  success         Boolean
+  selectedStack   Json
+  generatedFiles  Json
+  error           String?
+  buildDuration   Int?     // milliseconds
+  userFeedback    Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([buildId])
+  @@index([prdId])
+  @@index([success])
+  @@index([createdAt])
+}
+
+model ComponentRelationship {
+  id              String   @id @default(uuid())
+  component1Id    String
+  component2Id    String
+  relationshipType String  // 'works_well', 'conflicts', 'requires', etc.
+  strength        Float    // 0.0 to 1.0
+  evidenceCount   Int      @default(1)
+  lastObserved    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([component1Id, component2Id, relationshipType])
+  @@index([component1Id])
+  @@index([component2Id])
+  @@index([relationshipType])
+}
+
+model DomainPattern {
+  id              String   @id @default(uuid())
+  domain          String
+  pattern         String
+  componentStack  Json     // Recommended component IDs for this pattern
+  successRate     Float    @default(0.0)
+  usageCount      Int      @default(0)
+  lastUsed        DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([domain])
+  @@index([successRate])
+}

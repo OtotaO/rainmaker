@@ -3,9 +3,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { z } from 'zod'; // Keep z import
 import { Card, CardContent, CardHeader, CardTitle } from "../@/components/ui/card";
 import { Button } from "../@/components/ui/button";
-import { ScrollArea } from "../@/components/ui/scroll-area";
-import { GitHubLogoIcon, LightningBoltIcon, FileTextIcon, UploadIcon } from "@radix-ui/react-icons";
-import { BookOpenIcon, RefreshCwIcon } from 'lucide-react';
+import { FileTextIcon, UploadIcon } from "@radix-ui/react-icons";
+import { BookOpenIcon } from 'lucide-react';
 import { motion } from "framer-motion";
 import { FinalizedPRDDisplay } from './Refinement/FinalizedPRDDisplay';
 import { LearningJournalComponent } from './Refinement/LearningJournalComponent';
@@ -16,13 +15,16 @@ import { ProductHighLevelDescription } from './ProductHighLevelDescription';
 import ThemeToggle from './ThemeToggle';
 import { validateSchema, formatValidationErrors } from '../lib/validationUtils'; // Corrected path
 import { ErrorDisplay, type AppError } from './common/ErrorDisplay'; // Corrected import path
+import { DualPathLanding } from './DualPathLanding';
+import { ConnectExistingProject, type ExistingProjectData } from './ConnectExistingProject';
 
 // Define Zod schema for ProjectType if not available from shared types
 const ProjectTypeZodSchema = z.enum(['CREATE_NEW_APPLICATION', 'ADD_FEATURE_FOR_EXISTING_PROJECT']);
 
-// Define New Simplified Workflow States
+// Define Workflow States
 const WORKFLOW_STATES = {
-  PROJECT_TYPE_SELECTION: 'project_type_selection',
+  DUAL_PATH_LANDING: 'dual_path_landing',
+  CONNECT_EXISTING: 'connect_existing',
   PRODUCT_CONTEXT: 'product_context',
   QUICK_DEFINITION: 'quick_definition',
   PRD_REVIEW: 'prd_review',
@@ -38,6 +40,7 @@ const ProductHub: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [appError, setAppError] = useState<AppError | null>(null); // Changed error state
+  const [existingProjectData, setExistingProjectData] = useState<ExistingProjectData | null>(null);
   
   // Project type selection state - loads from localStorage
   const [selectedProjectType, setSelectedProjectType] = useState<ProjectType>(() => {
@@ -72,7 +75,7 @@ const ProductHub: React.FC = () => {
         console.warn('Error parsing activeWorkflow from localStorage:', e);
       }
     }
-    return WORKFLOW_STATES.PROJECT_TYPE_SELECTION;
+    return WORKFLOW_STATES.DUAL_PATH_LANDING;
   });
 
   // Active Product High Level Description state - loads from localStorage
@@ -233,9 +236,6 @@ const ProductHub: React.FC = () => {
   const handleNextStep = () => {
     setAppError(null); // Clear previous errors
     switch (activeWorkflow) {
-      case WORKFLOW_STATES.PROJECT_TYPE_SELECTION:
-        setActiveWorkflow(WORKFLOW_STATES.PRODUCT_CONTEXT);
-        break;
       case WORKFLOW_STATES.PRODUCT_CONTEXT:
         if (activeProductHighLevelDescription && activeProductHighLevelDescription.description.length >= 50) {
           setActiveWorkflow(WORKFLOW_STATES.QUICK_DEFINITION);
@@ -259,8 +259,11 @@ const ProductHub: React.FC = () => {
   const handlePreviousStep = () => {
     setAppError(null); // Clear previous errors
     switch (activeWorkflow) {
+      case WORKFLOW_STATES.CONNECT_EXISTING:
+        setActiveWorkflow(WORKFLOW_STATES.DUAL_PATH_LANDING);
+        break;
       case WORKFLOW_STATES.PRODUCT_CONTEXT:
-        setActiveWorkflow(WORKFLOW_STATES.PROJECT_TYPE_SELECTION);
+        setActiveWorkflow(WORKFLOW_STATES.DUAL_PATH_LANDING);
         break;
       case WORKFLOW_STATES.QUICK_DEFINITION:
         setActiveWorkflow(WORKFLOW_STATES.PRODUCT_CONTEXT);
@@ -276,6 +279,44 @@ const ProductHub: React.FC = () => {
         break;
       default:
         console.warn("Unhandled state transition for previous step:", activeWorkflow);
+    }
+  };
+
+  const handleDualPathSelection = (path: 'connect-existing' | 'create-new') => {
+    setAppError(null);
+    if (path === 'connect-existing') {
+      setSelectedProjectType('ADD_FEATURE_FOR_EXISTING_PROJECT');
+      setActiveWorkflow(WORKFLOW_STATES.CONNECT_EXISTING);
+    } else {
+      setSelectedProjectType('CREATE_NEW_APPLICATION');
+      setActiveWorkflow(WORKFLOW_STATES.PRODUCT_CONTEXT);
+    }
+  };
+
+  const handleExistingProjectComplete = (data: ExistingProjectData) => {
+    setExistingProjectData(data);
+    
+    if (data.skipAnalysis) {
+      // Use the 3-question flow
+      setActiveProductHighLevelDescription({
+        id: `existing-project-${Date.now()}`,
+        name: 'Existing Project Enhancement',
+        description: data.projectDescription,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      setActiveWorkflow(WORKFLOW_STATES.QUICK_DEFINITION);
+    } else {
+      // TODO: Implement codebase analysis
+      // For now, we'll also go to the 3-question flow
+      setActiveProductHighLevelDescription({
+        id: `existing-project-${Date.now()}`,
+        name: 'Existing Project Enhancement',
+        description: data.projectDescription,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      setActiveWorkflow(WORKFLOW_STATES.QUICK_DEFINITION);
     }
   };
 
@@ -304,55 +345,7 @@ const ProductHub: React.FC = () => {
             </motion.div>
           </header>
 
-          {/* Project Type Toggle */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mb-8"
-          >
-            <Card className="bg-card/50 backdrop-blur-sm border border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold text-center text-card-foreground">
-                  🚀 What are you building?
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-center space-x-4">
-                  <Button
-                    variant={selectedProjectType === 'CREATE_NEW_APPLICATION' ? 'default' : 'outline'}
-                    onClick={() => setSelectedProjectType('CREATE_NEW_APPLICATION')}
-                    className={`px-6 py-3 transition-all duration-200 ${
-                      selectedProjectType === 'CREATE_NEW_APPLICATION'
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'border-border hover:border-primary bg-background/50 text-foreground hover:bg-accent'
-                    }`}
-                  >
-                    Create New Application
-                  </Button>
-                  <Button
-                    variant={selectedProjectType === 'ADD_FEATURE_FOR_EXISTING_PROJECT' ? 'default' : 'outline'}
-                    onClick={() => setSelectedProjectType('ADD_FEATURE_FOR_EXISTING_PROJECT')}
-                    className={`px-6 py-3 transition-all duration-200 ${
-                      selectedProjectType === 'ADD_FEATURE_FOR_EXISTING_PROJECT'
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'border-border hover:border-primary bg-background/50 text-foreground hover:bg-accent'
-                    }`}
-                  >
-                    Add Feature for Existing Project
-                  </Button>
-                </div>
-                <p className="text-center text-sm text-muted-foreground mt-3">
-                  {selectedProjectType === 'CREATE_NEW_APPLICATION'
-                    ? 'Generate a complete application with frontend, backend, and deployment setup'
-                    : 'Add specific features and components to your existing codebase'
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <div className="flex justify-start mb-8"> {/* Keep Learning Journal, remove Refresh Issues */}
+          <div className="flex justify-start mb-8"> {/* Keep Learning Journal */}
             <Button 
               onClick={() => setShowLearningJournal(!showLearningJournal)} 
               variant="outline"
@@ -389,7 +382,17 @@ const ProductHub: React.FC = () => {
               className="mt-8"
             >
               {/* Main content area based on activeWorkflow */}
-              {/* PROJECT_TYPE_SELECTION is handled above */}
+              
+              {activeWorkflow === WORKFLOW_STATES.DUAL_PATH_LANDING && (
+                <DualPathLanding onSelectPath={handleDualPathSelection} />
+              )}
+
+              {activeWorkflow === WORKFLOW_STATES.CONNECT_EXISTING && (
+                <ConnectExistingProject 
+                  onComplete={handleExistingProjectComplete}
+                  onBack={() => setActiveWorkflow(WORKFLOW_STATES.DUAL_PATH_LANDING)}
+                />
+              )}
 
               {activeWorkflow === WORKFLOW_STATES.PRODUCT_CONTEXT && (
                 <Card className="bg-card/80 backdrop-blur-sm border-border">
