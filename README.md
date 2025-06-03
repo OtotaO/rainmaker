@@ -2,7 +2,15 @@
 
 **From PRD to Working Code in One Click - Mathematically Guaranteed**
 
-Rainmaker is a formally verified code generation platform that transforms Product Requirements Documents (PRDs) into production-ready applications. Using Dafny mathematical proofs, we guarantee that every generated project will build and run on the first try.
+Rainmaker is the world's first formally verified code generation platform that eliminates entire classes of bugs before they exist. We don't just generate code—we mathematically prove it's correct.
+
+Using Dafny formal verification, we guarantee:
+- Your pricing calculations will never produce negative values
+- Your state machines can't enter invalid states
+- Your distributed transactions will always maintain consistency
+- Your generated projects will build and run on the first try
+
+This isn't testing. This isn't "best practices." This is mathematical certainty applied to real-world software development.
 
 ## 🚀 Two Paths to Success
 
@@ -38,8 +46,12 @@ Rainmaker uses formal verification to prove:
 2. **Type Safety** - Zod schemas, TypeScript, and Prisma models are perfectly aligned
 3. **Build Success** - Generated projects will always build and run
 4. **Optimal Selection** - The best components for your requirements, every time
+5. **Business Logic Correctness** - Pricing, inventory, and financial calculations verified
+6. **State Machine Safety** - Invalid state transitions are mathematically impossible
+7. **Distributed Consistency** - Saga patterns with guaranteed compensation
 
 [See the full verification system documentation](verification/RAINMAKER_VERIFICATION_SYSTEM.md)
+[See the expanded verification for real-world bugs](EXPANDED_VERIFICATION_SYSTEM.md)
 
 ## 🏗️ Architecture
 
