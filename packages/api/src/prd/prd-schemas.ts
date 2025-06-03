@@ -11,15 +11,12 @@ export const USER_STORY_ID = '03-USER';
 export const OVERALL_ASSESSMENT_ID = '01-OVRL';
 
 //TODO(fwd): Fix according to comment
-// Let's remove the optional field and also extract this to be conditional - if the revision of the PRD is greater than 1, there must be critiques that were applied. This can be done via discriminated union and an extra field we discriminate on, say... prdType (which is a discriminated union of z.literal values that can be initial, revised-based-on-feedback, updated-due-to-interaction-with-new-feature).
+// TODO (1) Implemented: appliedCritiqueIds is now conditional based on prdRevisionType.
+// - For INITIAL, appliedCritiqueIds doesn't exist.
+// - For REVISED_BASED_ON_FEEDBACK, appliedCritiqueIds is a non-empty array.
+// - For UPDATED_DUE_TO_INTERACTION, appliedCritiqueIds is optional, and interactionReferenceId is added.
 
-// Then for each prdType, we have distinct object shapes:
-
-// For initial, appliedCritiqueIds doesn't exist at all
-// For revised-based-on-feedback, appliedCritiqueIds should be non-empty and have runtime check to ensure that all given critique IDs are included in the list
-// For updated-due-to-interaction-with-new-feature, we should include the ID of the new feature. In future, we probably want to have a join table that describes exactly what the interaction pattern is with the new feature, but for now, this should suffice.
-
-// Second comment 
+// Second comment
 
 // Let's promote critique IDs to a first class object 
 // - I think it's better this way because then we can be more deliberate in having the "PRD reviewer"
@@ -28,18 +25,46 @@ export const OVERALL_ASSESSMENT_ID = '01-OVRL';
 
 // Third comment
 
-// Let's help out the LLM by being explicit which 4 items we want 
-// - we want the four most important items that define the "perimeter" of this feature 
+// Let's help out the LLM by being explicit which 4 items we want
+// - we want the four most important items that define the "perimeter" of this feature
 // - meaning we want something like the "minimal spanning set" of semantically orthogonal constraints that say what is not in scope.
+
+// Define discriminated union for Revision Information
+const RevisionInfoBaseSchema = z.object({
+  revisionNumber: z.number().int().positive()
+    .describe('Sequential number indicating the current revision of the PRD'),
+});
+
+const InitialRevisionSchema = RevisionInfoBaseSchema.extend({
+  prdRevisionType: z.literal('INITIAL')
+    .describe('Indicates this is the first version of the PRD.'),
+});
+
+const FeedbackRevisedRevisionSchema = RevisionInfoBaseSchema.extend({
+  prdRevisionType: z.literal('REVISED_BASED_ON_FEEDBACK')
+    .describe('Indicates this PRD version was revised based on feedback.'),
+  appliedCritiqueIds: z.array(z.string()).min(1)
+    .describe('Non-empty list of critique IDs that were applied in this revision.'),
+});
+
+const UpdateRevisedRevisionSchema = RevisionInfoBaseSchema.extend({
+  prdRevisionType: z.literal('UPDATED_DUE_TO_INTERACTION')
+    .describe('Indicates this PRD version was updated due to interaction with another feature or change.'),
+  interactionReferenceId: z.string()
+    .describe('Identifier for the feature or change that prompted this update.'),
+  appliedCritiqueIds: z.array(z.string()).optional()
+    .describe('Optional list of critique IDs that were applied in this revision.'),
+});
+
+export const RevisionInfoSchema = z.discriminatedUnion('prdRevisionType', [
+  InitialRevisionSchema,
+  FeedbackRevisedRevisionSchema,
+  UpdateRevisedRevisionSchema,
+]).describe('Metadata about the PRD revision history, typed by revision nature.');
 
 
 export const LeanPRDSchema = z.object({
-  revisionInfo: z.object({
-    revisionNumber: z.number().int().positive()
-      .describe('Sequential number indicating the current revision of the PRD'),
-    appliedCritiqueIds: z.array(z.string())
-      .describe('List of critique IDs that were applied in this revision'),
-  }).describe('Metadata about the PRD revision history'),
+  revisionInfo: RevisionInfoSchema,
   coreFeatureDefinition: z
     .object({
       id: z.literal(CORE_SECTION_ID)
@@ -227,13 +252,6 @@ export const PRDWithReviewSchema = z.object({
 export type PRDWithReviewSchema = z.infer<typeof PRDWithReviewSchema>;
 
 export const ImprovedLeanPRDSchema = z.object({
-  revisionInfo: z.object({
-    revisionNumber: z.number().int().positive()
-      .describe('Sequential number indicating the current revision'),
-    appliedCritiqueIds: z.array(z.string())
-      .describe('List of critique IDs applied in this revision'),
-  }).describe('Metadata about this improved version'),
-
   improvements: z.array(
     z.object({
       id: z.string()
@@ -245,7 +263,12 @@ export const ImprovedLeanPRDSchema = z.object({
     })
   ).describe('List of improvements made in this revision'),
 
-  ...LeanPRDSchema.omit({ revisionInfo: true }).shape,
+  ...LeanPRDSchema.omit({ revisionInfo: true }).shape, // Keep other fields from LeanPRDSchema
+  // Override revisionInfo for ImprovedLeanPRDSchema to ensure it's not INITIAL
+  revisionInfo: z.discriminatedUnion('prdRevisionType', [
+    FeedbackRevisedRevisionSchema,
+    UpdateRevisedRevisionSchema,
+  ]).describe('Metadata about this improved version, which cannot be an initial revision.'),
 });
 
 export type ImprovedLeanPRDSchema = z.infer<typeof ImprovedLeanPRDSchema>;

@@ -7,9 +7,13 @@ import { Input } from "../@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "../@/components/ui/alert";
 import { LearningJournalComponent } from './Refinement/LearningJournalComponent';
 import { FinalizedPRDDisplay } from './Refinement/FinalizedPRDDisplay';
-import type { PRDGeneratorProps } from './types';
-import type { ImprovedLeanPRDSchema } from '../../../shared/src/types';
-import type { GitHubIssue } from '../../../shared/src/types'
+import type { PRDGeneratorProps as OriginalPRDGeneratorProps } from './types';
+import type { ImprovedLeanPRDSchema, GitHubIssue } from '../../../shared/src/types';
+
+// Extend original props to include initialPRDData
+interface PRDGeneratorProps extends OriginalPRDGeneratorProps {
+  initialPRDData?: ImprovedLeanPRDSchema | null;
+}
 
 const PRD_QUESTIONS = [
   { id: "1_SPEC", text: "What's the feature in one sentence?" },
@@ -17,27 +21,74 @@ const PRD_QUESTIONS = [
   { id: "3_GOTCHAS", text: "What's the one thing that could kill this feature?" },
 ];
 
-export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComplete }) => {
+export const PRDGenerator: React.FC<PRDGeneratorProps> = (props) => {
+  const { finalizedPRD: initialFinalizedPRDFromProps, onComplete, initialPRDData } = props;
   const [currentStep, setCurrentStep] = useState(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [localFinalizedPRD, setFinalizedPRD] = useState<ImprovedLeanPRDSchema | null>(finalizedPRD);
+  const [localFinalizedPRD, setLocalFinalizedPRD] = useState<ImprovedLeanPRDSchema | null>(initialFinalizedPRDFromProps || null);
   const [selectedIssue, setSelectedIssue] = useState<GitHubIssue | null>(null);
   const [showLearningJournal, setShowLearningJournal] = useState(false);
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
 
   useEffect(() => {
-    fetchIssues();
-  }, []);
+    if (initialPRDData) {
+      const initialResponses: Record<string, string> = {};
+      initialResponses[PRD_QUESTIONS[0].id] = initialPRDData.coreFeatureDefinition?.content || '';
+      initialResponses[PRD_QUESTIONS[1].id] = initialPRDData.successMetrics?.[0]?.content || '';
+      initialResponses[PRD_QUESTIONS[2].id] = initialPRDData.knownRisks?.[0]?.content || '';
+      
+      setResponses(initialResponses);
+      setCurrentStep(0);
+      setLocalFinalizedPRD(null); // Clear any existing finalized PRD to show the form
+      // Set a placeholder selectedIssue to bypass issue selection and indicate editing mode
+      setSelectedIssue({ 
+        id: -1, 
+        number: -1,
+        title: `Editing Inputs for: ${initialPRDData.coreFeatureDefinition?.content.substring(0,30) || 'PRD'}...`, 
+        body: 'Currently editing the inputs for an existing PRD.',
+        labels: [], 
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        // Ensure placeholder matches GitHubIssue structure if more fields are mandatory
+        // For example, if 'user' and 'state' were part of GitHubIssue in shared/src/types:
+        // user: { login: 'system' }, 
+        // state: 'open',
+      });
+      // Do not fetch issues from GitHub when in edit mode initiated by initialPRDData
+    } else {
+      // Only fetch issues if not in edit mode (i.e., initialPRDData is not provided)
+      // and no issue is already selected (e.g. from a previous state if component re-renders)
+      if (!selectedIssue) {
+        fetchIssues();
+      }
+    }
+  // Adding selectedIssue to dependency array to prevent re-fetching if an issue is already selected.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPRDData, selectedIssue]); // Removed fetchIssues from here, it's called conditionally
 
   const fetchIssues = async () => {
     setIsLoading(true);
     try {
       const response = await fetch('http://localhost:3001/api/github/issues');
-      const data = await response.json();
-      setIssues(data);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const responseData = await response.json();
+      
+      // Handle different possible response formats
+      if (responseData && Array.isArray(responseData.issues)) {
+        setIssues(responseData.issues as GitHubIssue[]);
+      } else if (Array.isArray(responseData)) { 
+        setIssues(responseData as GitHubIssue[]);
+      } else {
+        console.error('Fetched issues data is not in expected format:', responseData);
+        setIssues([]);
+      }
     } catch (error) {
       console.error('Error fetching issues:', error);
+      setIssues([]);
     } finally {
       setIsLoading(false);
     }
@@ -56,11 +107,6 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
       await generatePRD();
     }
   };
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  useEffect(() => {
-    fetchIssues();
-  }, []);
 
   const generatePRD = async () => {
     setIsLoading(true);
@@ -82,8 +128,10 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
       }
 
       const data: ImprovedLeanPRDSchema = await response.json();
-      setFinalizedPRD(data);
-      onComplete(data);
+      setLocalFinalizedPRD(data);
+      if(onComplete) { // Check if onComplete is provided before calling
+        onComplete(data);
+      }
     } catch (error) {
       console.error('Error generating PRD:', error);
     } finally {
@@ -93,14 +141,14 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
 
   const handleEdit = (step: number) => {
     setCurrentStep(step);
-    setFinalizedPRD(null);
+    setLocalFinalizedPRD(null);
   };
 
   const handleIssueSelect = (issue: GitHubIssue) => {
     setSelectedIssue(issue);
     setCurrentStep(0);
     setResponses({});
-    setFinalizedPRD(null);
+    setLocalFinalizedPRD(null);
   };
 
   const toggleLearningJournal = () => {
@@ -144,13 +192,14 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
               </motion.div>
               <p className="mt-2 text-muted-foreground">Loading...</p>
             </div>
-          ) : !selectedIssue && issues.length > 0 ? (
+          ) : null}
+
+          {!selectedIssue && issues.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {issues.map((issue: GitHubIssue) => (
                 <Card
                   key={issue.id}
-                  className={`cursor-pointer transition-all duration-200 ${selectedIssue?.id === issue.id ? 'border-primary shadow-lg' : 'hover:border-border'
-                    }`}
+                  className="cursor-pointer transition-all duration-200 hover:border-border"
                   onClick={() => handleIssueSelect(issue)}
                 >
                   <CardHeader>
@@ -162,16 +211,18 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
                 </Card>
               ))}
             </div>
-          ) : !selectedIssue ? (
+          )}
+
+          {!selectedIssue && issues.length === 0 && !isLoading && (
             <Alert>
               <AlertTitle>No issues found</AlertTitle>
               <AlertDescription>
                 There are currently no open issues in the repository. Try refreshing or create a new issue.
               </AlertDescription>
             </Alert>
-          ) : null}
+          )}
 
-          {selectedIssue && !finalizedPRD && (
+          {selectedIssue && !localFinalizedPRD && (
             <form onSubmit={handleSubmit}>
               <h2 className="text-xl font-semibold mb-4">{PRD_QUESTIONS[currentStep].text}</h2>
               <Input
@@ -193,12 +244,14 @@ export const PRDGenerator: React.FC<PRDGeneratorProps> = ({ finalizedPRD, onComp
             </form>
           )}
 
-          {finalizedPRD && (
+          {localFinalizedPRD && ( // Changed from finalizedPRD to localFinalizedPRD
             <FinalizedPRDDisplay
-              finalizedPRD={finalizedPRD}
+              finalizedPRD={localFinalizedPRD} // Changed from finalizedPRD
+              // Assuming onEditPRD would be passed from a parent component managing these views
+              // onEditPRD={(prdToEdit) => { /* logic to switch view and pass prdToEdit */ }}
               onCreateGitHubIssue={async () => {
                 // Implement GitHub issue creation logic here
-                console.log('Creating GitHub issue with PRD:', finalizedPRD);
+                console.log('Creating GitHub issue with PRD:', localFinalizedPRD);
               }}
             />
           )}

@@ -1,0 +1,49 @@
+name: Test and Verify
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
+      - name: Install Dafny
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dafny
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run tests
+        run: |
+          cd packages/frontend && bun test
+          cd packages/api && bun test
+
+      - name: Run verification
+        run: |
+          cd verification
+          chmod +x verify_component_registry.sh
+          ./verify_component_registry.sh
+
+      - name: Upload verification report
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-report
+          path: verification/verification_report.md

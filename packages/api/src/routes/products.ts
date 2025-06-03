@@ -29,7 +29,7 @@ export const createProductsRouter = (prisma: PrismaClient) => ({
       const productHighLevelDescriptions = await prisma.productHighLevelDescription.findMany();
       return {
         status: 200 as const,
-        body: productHighLevelDescriptions.map(desc => ({
+        body: productHighLevelDescriptions.map((desc: any) => ({
           ...desc,
           createdAt: desc.createdAt.toISOString(),
           updatedAt: desc.updatedAt.toISOString()

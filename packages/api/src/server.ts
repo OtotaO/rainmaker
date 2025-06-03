@@ -18,6 +18,8 @@ import { prdRouter, createPrdRouter } from './routes/prd';
 import { aiAssistanceRouter, createAiAssistanceRouter } from './routes/ai-assistance';
 import { githubRouter, createGithubRouter } from './routes/github';
 import { configRouter, createConfigRouter } from './routes/config';
+import { componentsRouter, createComponentsRouter } from './routes/components';
+import buildRouter from './routes/build';
 import { ConfigSettingService } from './config/configSettingService';
 
 const app = express();
@@ -78,6 +80,9 @@ try {
     }
   });
 
+  // Add the build orchestrator routes (Magic Button)
+  app.use('/api/build', buildRouter);
+
   // Set base path for all routes
   app.use('/api', (req, res, next) => {
     req.url = req.url.replace('/api', '');
@@ -95,7 +100,8 @@ try {
     prd: prdRouter,
     aiAssistance: aiAssistanceRouter,
     github: githubRouter,
-    config: configRouter
+    config: configRouter,
+    components: componentsRouter
   };
 
   // Create router with implementations
@@ -106,7 +112,8 @@ try {
     prd: createPrdRouter(),
     aiAssistance: createAiAssistanceRouter(learningJournalService),
     github: createGithubRouter(),
-    config: createConfigRouter(configSettingService)
+    config: createConfigRouter(configSettingService),
+    components: createComponentsRouter()
   });
 
   createExpressEndpoints(contract, router, app);
@@ -118,6 +125,7 @@ const port = serverConfig.port;
 
 app.listen(port, () => {
   logger.info(`Server is running on port ${port}`);
+  logger.info('🚀 Rainmaker Build Orchestrator (Magic Button) is ready!');
 });
 
 export default app;

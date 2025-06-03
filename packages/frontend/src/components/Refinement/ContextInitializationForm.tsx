@@ -1,6 +1,6 @@
 // START: [01-CTXINT-FE-2.1, 01-CTXINT-FE-2.2]
 import React, { useState } from 'react';
-import { FileSelector } from './FileSelector';
+import type { SelectedFile } from '../../../../shared/src/types';
 
 interface ContextInitializationFormProps {
   onComplete: (selectedFiles: SelectedFile[]) => void;
@@ -10,7 +10,7 @@ export const ContextInitializationForm: React.FC<ContextInitializationFormProps>
   const [owner, setOwner] = useState('');
   const [repo, setRepo] = useState('');
   const [regexPatterns, setRegexPatterns] = useState(['']);
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<SelectedFile[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,17 +74,17 @@ export const ContextInitializationForm: React.FC<ContextInitializationFormProps>
 };
 
 interface FileSelectorProps {
-  files: File[];
+  files: SelectedFile[];
   onSelect: (selectedFiles: SelectedFile[]) => void;
 }
 
 export const FileSelector: React.FC<FileSelectorProps> = ({ files, onSelect }) => {
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
 
-  const handleFileToggle = (file: File) => {
+  const handleFileToggle = (file: SelectedFile) => {
     const index = selectedFiles.findIndex(f => f.path === file.path);
     if (index === -1) {
-      setSelectedFiles([...selectedFiles, file as SelectedFile]);
+      setSelectedFiles([...selectedFiles, file]);
     } else {
       setSelectedFiles(selectedFiles.filter(f => f.path !== file.path));
     }

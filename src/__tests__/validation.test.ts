@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { validateFieldName, validateSchema, validateRelations } from '../utils/validation';
-import { SchemaValidationError } from '../types/prisma';
+import { validateFieldName, validateSchema, validateRelations, SchemaValidationError } from '../utils/validation';
 
 describe('Validation Utilities', () => {
   describe('validateFieldName', () => {
@@ -61,9 +60,14 @@ describe('Validation Utilities', () => {
         }).describe(JSON.stringify({ relation: 'Post' }))),
       });
 
-      const schemaMap = new Map([
+      const postSchema = z.object({ 
+        id: z.string(), 
+        title: z.string() 
+      });
+
+      const schemaMap = new Map<string, z.ZodSchema<any>>([
         ['User', userSchema],
-        ['Post', z.object({ id: z.string(), title: z.string() })],
+        ['Post', postSchema],
       ]);
 
       expect(() => validateRelations(userSchema, schemaMap, 'User')).not.toThrow();
@@ -78,11 +82,11 @@ describe('Validation Utilities', () => {
         }).describe(JSON.stringify({ relation: 'NonExistentModel' }))),
       });
 
-      const schemaMap = new Map([
+      const schemaMap = new Map<string, z.ZodSchema<any>>([
         ['User', userSchema],
       ]);
 
       expect(() => validateRelations(userSchema, schemaMap, 'User')).toThrow(SchemaValidationError);
     });
   });
-}); 
+});

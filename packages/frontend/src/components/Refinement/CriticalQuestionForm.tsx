@@ -1,6 +1,6 @@
 // START: [02-CRITQ-FE-2.1, 02-CRITQ-FE-2.2]
 import React, { useState, useEffect } from 'react';
-import { QuestionDisplay } from './QuestionDisplay';
+import type { CriticalQuestion, ProjectContext, PreviousResponse } from '../../../../shared/src/types';
 
 interface CriticalQuestionFormProps {
   onComplete: (question: CriticalQuestion, answer: string) => void;
@@ -33,7 +33,7 @@ export const CriticalQuestionForm: React.FC<CriticalQuestionFormProps> = ({ onCo
   const handleAnswer = (answer: string) => {
     setAnswer(answer);
     if (currentQuestion) {
-      const newResponse: PreviousResponse = { question: currentQuestion, answer };
+      const newResponse: PreviousResponse = { question: currentQuestion, answer, timestamp: new Date().toISOString() };
       setPreviousResponses([...previousResponses, newResponse]);
       onComplete(currentQuestion, answer);
     }

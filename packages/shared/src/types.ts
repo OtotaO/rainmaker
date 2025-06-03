@@ -22,13 +22,9 @@ export interface GitHubIssueResponse {
 
 export interface FinalizedPRD {
   refinedPRD: string;
-  epicsAndTasks: {
-    [key: string]: string[];
-  };
-  mvpFeatures: string[];
-  acceptanceCriteria: {
-    [key: string]: string[];
-  };
+  epicsAndTasks: EpicAndTasks;
+  mvpFeatures: MVPFeatures;
+  acceptanceCriteria: AcceptanceCriterion[];
   finalNotes: string;
 }
 
@@ -190,3 +186,75 @@ export const ProductHighLevelDescriptionSchema = z.object({
 });
 
 export type ProductHighLevelDescriptionSchema = z.infer<typeof ProductHighLevelDescriptionSchema>;
+
+// Additional types for Refinement components
+export interface AcceptanceCriterion {
+  id: string;
+  content: string;
+  priority?: 'high' | 'medium' | 'low';
+}
+
+export interface Feature {
+  id: string;
+  name: string;
+  description: string;
+  priority?: 'high' | 'medium' | 'low';
+  estimatedEffort?: string;
+}
+
+export interface Epic {
+  id: string;
+  title: string;
+  description: string;
+  features: Feature[];
+  estimatedDuration?: string;
+}
+
+export interface EpicAndTasks {
+  [epicId: string]: string[];
+}
+
+export interface MVPFeatures {
+  included: Feature[];
+  excluded: Feature[];
+  reasoning: string;
+}
+
+export interface CriticalQuestion {
+  id: string;
+  question: string;
+  context: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface ProjectContext {
+  id: string;
+  name: string;
+  description: string;
+  technologies: string[];
+  constraints: string[];
+  timeline?: string;
+}
+
+export interface SelectedFile {
+  path: string;
+  name: string;
+  content?: string;
+  type: string;
+  size?: number;
+}
+
+export interface PreviousResponse {
+  question: CriticalQuestion;
+  answer: string;
+  timestamp: string;
+}
+
+// Project type for distinguishing between new apps and feature additions
+export type ProjectType = 'CREATE_NEW_APPLICATION' | 'ADD_FEATURE_FOR_EXISTING_PROJECT';
+
+export interface ProjectTypeSelection {
+  type: ProjectType;
+  label: string;
+  description: string;
+}

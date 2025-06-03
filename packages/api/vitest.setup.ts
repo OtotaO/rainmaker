@@ -5,6 +5,41 @@ process.env.ANTHROPIC_API_KEY = 'test-api-key';
 process.env.GITHUB_OWNER = 'test-owner';
 process.env.GITHUB_REPO = 'test-repo';
 process.env.GITHUB_BRANCH = 'main';
+process.env.GITHUB_TOKEN = 'test-github-token';
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+
+// Mock Octokit
+vi.mock('@octokit/rest', () => {
+  return {
+    Octokit: vi.fn().mockImplementation(() => {
+      return {
+        issues: {
+          create: vi.fn().mockResolvedValue({
+            data: {
+              html_url: 'https://github.com/test/repo/issues/1',
+              number: 1
+            }
+          }),
+          createComment: vi.fn().mockResolvedValue({
+            data: {
+              html_url: 'https://github.com/test/repo/issues/1#issuecomment-1'
+            }
+          }),
+          listForRepo: vi.fn().mockResolvedValue({
+            data: []
+          })
+        },
+        search: {
+          repos: vi.fn().mockResolvedValue({
+            data: {
+              items: []
+            }
+          })
+        }
+      };
+    })
+  };
+});
 
 // Mock Anthropic client
 vi.mock('@anthropic-ai/sdk', () => {
@@ -40,7 +75,7 @@ vi.mock('@anthropic-ai/sdk', () => {
 
 // Mock fs module
 vi.mock('fs', () => {
-  const mockReadFileSync = vi.fn().mockReturnValue('ANTHROPIC_API_KEY=test-api-key');
+  const mockReadFileSync = vi.fn().mockReturnValue('ANTHROPIC_API_KEY=test-api-key\nDATABASE_URL=postgresql://test:test@localhost:5432/test_db');
   return {
     readFileSync: mockReadFileSync,
     default: {

@@ -8,7 +8,7 @@ import MVPPrioritization from './MVPPrioritization';
 import AcceptanceCriteria from './AcceptanceCriteria';
 import TeamReview from './TeamReview';
 import FinalizeMVP from './FinalizeMVP';
-import type { AcceptanceCriterion, Epic, FinalizedPRD, MVPFeatures } from '../../../../shared/src/types';
+import type { AcceptanceCriterion, Epic, EpicAndTasks, FinalizedPRD, MVPFeatures } from '../../../../shared/src/types';
 
 enum RefinementStep {
   InitialReview = 'InitialReview',
@@ -27,8 +27,8 @@ interface RefinementProps {
 const Refinement: React.FC<RefinementProps> = ({ initialPRD, onComplete }) => {
   const [currentStep, setCurrentStep] = useState<RefinementStep>(RefinementStep.InitialReview);
   const [refinedPRD, setRefinedPRD] = useState(initialPRD);
-  const [epicsAndTasks, setEpicsAndTasks] = useState<Epic[]>([]);
-  const [mvpFeatures, setMvpFeatures] = useState<MVPFeatures[]>([]);
+  const [epicsAndTasks, setEpicsAndTasks] = useState<EpicAndTasks>({});
+  const [mvpFeatures, setMvpFeatures] = useState<MVPFeatures>({ included: [], excluded: [], reasoning: '' });
   const [acceptanceCriteria, setAcceptanceCriteria] = useState<AcceptanceCriterion[]>([]);
 
   const nextStep = () => {

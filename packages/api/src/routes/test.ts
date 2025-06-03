@@ -23,7 +23,7 @@ const contract = c.router({
 
 export const testRouter = contract;
 
-export const createTestRouter = (anthropic: Anthropic) => c.router(contract, {
+export const createTestRouter = (anthropic: Anthropic) => ({
   testAnthropic: async () => {
     try {
       const message = await anthropic.messages.create({
@@ -44,4 +44,4 @@ export const createTestRouter = (anthropic: Anthropic) => c.router(contract, {
       };
     }
   }
-}); 
+});

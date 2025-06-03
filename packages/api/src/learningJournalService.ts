@@ -46,7 +46,7 @@ export class LearningJournalService {
         orderBy: { timestamp: 'desc' },
         take: 50, // Limit to the most recent 50 entries
       });
-      return entries.map((entry) => ({
+      return entries.map((entry: any) => ({
         ...entry,
         timestamp: entry.timestamp.toISOString(),
       }));

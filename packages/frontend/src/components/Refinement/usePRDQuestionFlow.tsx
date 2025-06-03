@@ -1,8 +1,9 @@
 // ./packages/frontend/src/components/Refinement/usePRDQuestionFlow.ts
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Added useEffect
 import * as z from 'zod';
 import type { infer as zInfer } from 'zod';
-import type { ImprovedLeanPRDSchema, ProductHighLevelDescriptionSchema } from '../../../../shared/src/types';
+import { ImprovedLeanPRDSchema, ProductHighLevelDescriptionSchema } from '../../../../shared/src/types'; // Import Zod schemas
+import { validateSchema, formatValidationErrors } from '../../lib/validationUtils'; // Import validation utils
 
 const prdQuestionFlowInput = z.object({
   improvedDescription: z.string(),
@@ -10,7 +11,12 @@ const prdQuestionFlowInput = z.object({
   criticalRisk: z.string(),
 }).partial();
 
-type prdQuestionFlowInputType = zInfer<typeof prdQuestionFlowInput>
+type prdQuestionFlowInputType = zInfer<typeof prdQuestionFlowInput>;
+
+// Schema for the response from /api/anthropic (assuming it's a simple string message)
+const AnthropicApiResponseSchema = z.object({
+  message: z.string().min(1, "AI response message cannot be empty."),
+});
 
 const PRD_QUESTIONS = [
   { id: "improvedDescription", text: "What's the feature in one sentence?" },
@@ -218,21 +224,29 @@ const callAnthropicAPI = async (
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorBody = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
     }
 
-    const { message } = await response.json();
+    const rawResponse = await response.json();
+    const validationResult = validateSchema(AnthropicApiResponseSchema, rawResponse);
 
-    console.log('response from anthropic:', message)
+    if (!validationResult.success || !validationResult.data) {
+      const errorMsg = `Invalid AI response format: ${formatValidationErrors(validationResult.errors, validationResult.errorMessages)}`;
+      console.error(errorMsg, validationResult);
+      throw new Error(errorMsg);
+    }
 
-    return message;
+    console.log('response from anthropic:', validationResult.data.message);
+    return validationResult.data.message;
   } catch (error) {
     console.error('Error in callAnthropicAPI:', error);
     throw error;
   }
 };
 
-export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHighLevelDescriptionSchema, onComplete: (prd: ImprovedLeanPRDSchema) => void) => {
+export const usePRDQuestionFlow = (activeProductHighLevelDescriptionInput: ProductHighLevelDescriptionSchema, onComplete: (prd: ImprovedLeanPRDSchema) => void) => {
+  const [activeProductHighLevelDescription, setActiveProductHighLevelDescription] = useState(activeProductHighLevelDescriptionInput);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [aiResponses, setAiResponses] = useState<prdQuestionFlowInputType>({
@@ -241,11 +255,25 @@ export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHig
     criticalRisk: undefined
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null); // Add error state
   const [inputHistory, setInputHistory] = useState<prdQuestionFlowInputType>({
     improvedDescription: undefined,
     successMetric: undefined,
     criticalRisk: undefined
   });
+
+  useEffect(() => {
+    const validation = validateSchema(ProductHighLevelDescriptionSchema, activeProductHighLevelDescriptionInput);
+    if (!validation.success || !validation.data) {
+      const errorMsg = `Invalid activeProductHighLevelDescription provided to usePRDQuestionFlow: ${formatValidationErrors(validation.errors, validation.errorMessages)}`;
+      console.error(errorMsg);
+      setError(errorMsg); // Set an error state
+      // Potentially disable the hook or return early if context is invalid
+      return;
+    }
+    setActiveProductHighLevelDescription(validation.data);
+  }, [activeProductHighLevelDescriptionInput]);
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -287,12 +315,15 @@ export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHig
         activeProductHighLevelDescription
       );
       setAiResponses({ ...aiResponses, [PRD_QUESTIONS[currentStep].id]: aiResponse });
-    } catch (error) {
-      console.error('Error in handleSubmit:', error);
+      setError(null); // Clear previous errors
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "An unknown error occurred during AI interaction.";
+      console.error('Error in handleSubmit:', errorMsg, err);
       setAiResponses({
         ...aiResponses,
-        [PRD_QUESTIONS[currentStep].id]: "An error occurred while generating the AI response. Please try again.",
+        [PRD_QUESTIONS[currentStep].id]: `Error: ${errorMsg}. Please try again.`,
       });
+      setError(`Failed to get AI response: ${errorMsg}`);
     } finally {
       setIsLoading(false);
     }
@@ -318,60 +349,77 @@ export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHig
       if (!aiResponses.criticalRisk) missingResponses.push('criticalRisk');
       
       if (missingResponses.length > 0) {
-        console.warn("Some responses are missing for PRD generation", { 
-          missingResponses, 
-          availableResponses: Object.keys(aiResponses).filter(k => aiResponses[k as keyof typeof aiResponses]) 
+        console.warn("Some responses are missing for PRD generation", {
+          missingResponses,
+          availableResponses: Object.keys(aiResponses).filter(k => aiResponses[k as keyof typeof aiResponses])
         });
-        
+
         // Create fallback values for missing responses using user inputs
         if (!aiResponses.improvedDescription && responses.improvedDescription) {
           aiResponses.improvedDescription = `Original: ${responses.improvedDescription}\n\nImproved: ${responses.improvedDescription}`;
         }
-        
+
         if (!aiResponses.successMetric && responses.successMetric) {
           aiResponses.successMetric = `Original: ${responses.successMetric}\n\nImproved: ${responses.successMetric}`;
         }
-        
+
         if (!aiResponses.criticalRisk && responses.criticalRisk) {
           aiResponses.criticalRisk = `Original: ${responses.criticalRisk}\n\nImproved: ${responses.criticalRisk}`;
         }
       }
+
+      const payload = {
+        improvedDescription: aiResponses.improvedDescription || responses.improvedDescription || "No description provided",
+        successMetric: aiResponses.successMetric || responses.successMetric || "No success metric provided",
+        criticalRisk: aiResponses.criticalRisk || responses.criticalRisk || "No critical risk provided"
+      };
       
-      // Proceed even if some responses are missing or using fallbacks
+      // Validate payload before sending (optional, but good practice)
+      // const payloadValidation = validateSchema(SomePayloadSchema, payload);
+      // if (!payloadValidation.success) { ... handle error ... }
+
+
       const response = await fetch('http://localhost:3001/api/prd/generateFromSuggestions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          improvedDescription: aiResponses.improvedDescription || responses.improvedDescription || "No description provided",
-          successMetric: aiResponses.successMetric || responses.successMetric || "No success metric provided",
-          criticalRisk: aiResponses.criticalRisk || responses.criticalRisk || "No critical risk provided"
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
-        console.error(`HTTP error! status: ${response.status}`);
-        // Still complete the flow even on error
-        const basicPRD: ImprovedLeanPRDSchema = createBasicPRD();
-        onComplete(basicPRD);
+        const errorBody = await response.text();
+        console.error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
+        setError(`Failed to generate PRD: ${response.statusText}`);
+        onComplete(createBasicPRD()); // Fallback
         return;
       }
 
-      const data: ImprovedLeanPRDSchema = await response.json();
-      console.log("PRD generated successfully:", data);
-      onComplete(data);
-    } catch (error) {
-      console.error('Error generating PRD:', error);
-      // Create a basic PRD to allow the user to continue on error
-      const basicPRD: ImprovedLeanPRDSchema = createBasicPRD();
-      onComplete(basicPRD);
+      const rawData = await response.json();
+      const prdValidationResult = validateSchema(ImprovedLeanPRDSchema, rawData);
+
+      if (!prdValidationResult.success || !prdValidationResult.data) {
+        const errorMsg = `Invalid PRD data from server: ${formatValidationErrors(prdValidationResult.errors, prdValidationResult.errorMessages)}`;
+        console.error(errorMsg, prdValidationResult);
+        setError(errorMsg);
+        onComplete(createBasicPRD()); // Fallback
+        return;
+      }
+      
+      console.log("PRD generated successfully:", prdValidationResult.data);
+      onComplete(prdValidationResult.data);
+      setError(null); // Clear previous errors
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "An unknown error occurred during PRD generation.";
+      console.error('Error generating PRD:', errorMsg, err);
+      setError(`Failed to generate PRD: ${errorMsg}`);
+      onComplete(createBasicPRD()); // Fallback
     } finally {
       setIsLoading(false);
     }
   };
-  
-  // Create a basic PRD with user inputs when AI generation fails
+
+  // Create a basic PRD with user inputs when AI generation fails or data is invalid
   const createBasicPRD = (): ImprovedLeanPRDSchema => {
     return {
       revisionInfo: {
@@ -424,6 +472,7 @@ export const usePRDQuestionFlow = (activeProductHighLevelDescription: ProductHig
     responses,
     aiResponses,
     isLoading,
+    error, // Expose error state
     handleSubmit,
     handleEdit,
     PRD_QUESTIONS,

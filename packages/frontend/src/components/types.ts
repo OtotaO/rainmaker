@@ -1,8 +1,8 @@
 import type { FinalizedPRD, GitHubIssue, ImprovedLeanPRDSchema } from '../../../shared/src/types';
 
 export interface PRDGeneratorProps {
-  finalizedPRD: ImprovedLeanPRDSchema;
-  onComplete: (finalizedPRD: ImprovedLeanPRDSchema) => void;
+  finalizedPRD?: ImprovedLeanPRDSchema | null;
+  onComplete?: (finalizedPRD: ImprovedLeanPRDSchema) => void;
 }
 
 export interface LearningJournalToggleProps {

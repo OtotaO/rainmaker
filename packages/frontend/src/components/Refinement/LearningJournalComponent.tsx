@@ -1,12 +1,13 @@
-import type React from 'react'
+import type React from 'react';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../@/components/ui/card';
 import { Textarea } from '../../@/components/ui/textarea';
 import { Button } from '../../@/components/ui/button';
 import { BookOpen, RefreshCw } from 'lucide-react';
 import { z } from 'zod';
+import { validateSchema, formatValidationErrors } from '../../lib/validationUtils'; // Import validation utils
 
-// Zod schemas
+// Zod schemas (keeping them local for now as per analysis)
 const PlannedAdjustmentSchema = z.object({
   id: z.string(),
   reasoningForAdjustment: z.string(),
@@ -57,26 +58,52 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
 
   const fetchEntries = async () => {
     setIsLoading(true);
+    setError(null); // Clear previous errors
     try {
       const response = await fetch('http://localhost:3001/api/learning-journal/entries');
-      if (!response.ok) throw new Error('Failed to fetch entries');
-      const data = await response.json();
-      setEntries(data);
-    } catch (error) {
-      setError('Failed to load journal entries. Please try again later.');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch entries: ${response.statusText}`);
+      }
+      const rawData = await response.json();
+      const validationResult = validateSchema(z.array(LearningJournalEntrySchema), rawData);
+      if (validationResult.success && validationResult.data) {
+        setEntries(validationResult.data);
+      } else {
+        const errorMsg = `Error parsing journal entries: ${formatValidationErrors(validationResult.errors, validationResult.errorMessages)}`;
+        console.error(errorMsg, validationResult);
+        setError(errorMsg);
+        setEntries([]); // Clear or handle as appropriate
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "An unknown error occurred while fetching entries.";
+      console.error('Error in fetchEntries:', errorMsg, err);
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
   };
 
   const fetchAssistanceLevel = async () => {
+    setError(null); // Clear previous errors
     try {
       const response = await fetch('http://localhost:3001/api/ai-assistance-level');
-      if (!response.ok) throw new Error('Failed to fetch AI assistance level');
-      const data = await response.json();
-      setAssistanceLevel(data);
-    } catch (error) {
-      setError('Failed to load AI assistance level. Please try again later.');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch AI assistance level: ${response.statusText}`);
+      }
+      const rawData = await response.json();
+      const validationResult = validateSchema(AIAssistanceLevelSchema, rawData);
+      if (validationResult.success && validationResult.data) {
+        setAssistanceLevel(validationResult.data);
+      } else {
+        const errorMsg = `Error parsing AI assistance level: ${formatValidationErrors(validationResult.errors, validationResult.errorMessages)}`;
+        console.error(errorMsg, validationResult);
+        setError(errorMsg);
+        setAssistanceLevel(null); // Clear or handle
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "An unknown error occurred while fetching AI assistance level.";
+      console.error('Error in fetchAssistanceLevel:', errorMsg, err);
+      setError(errorMsg);
     }
   };
 
@@ -90,51 +117,61 @@ export const LearningJournalComponent: React.FC<LearningJournalComponentProps> =
     setError(null);
     setValidationErrors({});
 
-    try {
-      LearningJournalEntryRequestSchema.parse(newEntry);
+    const validationResult = validateSchema(LearningJournalEntryRequestSchema, newEntry);
+    if (!validationResult.success) {
+      setValidationErrors(validationResult.errors || {});
+      setError(formatValidationErrors(validationResult.errors, validationResult.errorMessages));
+      return;
+    }
 
+    // Ensure plannedAdjustments is an empty array if not provided, to match schema expectations
+    const entryToSend = {
+      ...validationResult.data,
+      plannedAdjustments: validationResult.data?.plannedAdjustments || [],
+    };
+
+    setIsLoading(true); // Set loading state for submission
+    try {
       const response = await fetch('http://localhost:3001/api/learning-journal/entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEntry),
+        body: JSON.stringify(entryToSend),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.error === 'Invalid entry format' && errorData.details) {
-          const zodErrors: z.ZodError = errorData.details;
-          const formattedErrors: Record<string, string[]> = {};
-          for (const err of zodErrors.errors) {
-            const field = err.path.join('.');
-            if (!formattedErrors[field]) {
-              formattedErrors[field] = [];
+        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response from server.' }));
+        // The backend might return Zod-like errors in errorData.details
+        if (errorData.error === 'Invalid entry format' && errorData.details && Array.isArray(errorData.details.errors)) {
+            const formattedErrors: Record<string, string[]> = {};
+            for (const err of errorData.details.errors as z.ZodIssue[]) {
+              const field = err.path.join('.');
+              if (!formattedErrors[field]) {
+                formattedErrors[field] = [];
+              }
+              formattedErrors[field].push(err.message);
             }
-            formattedErrors[field].push(err.message);
-          }
-          setValidationErrors(formattedErrors);
+            setValidationErrors(formattedErrors);
+            setError(formatValidationErrors(formattedErrors));
         } else {
-          throw new Error(errorData.error || 'Failed to add entry');
+          throw new Error(errorData.error || `Failed to add entry: ${response.statusText}`);
         }
       } else {
+        // Assuming the backend returns the created entry, which we could validate
+        // const createdEntryRaw = await response.json();
+        // const createdEntryValidation = validateSchema(LearningJournalEntrySchema, createdEntryRaw);
+        // if (createdEntryValidation.success) { ... }
         setNewEntry({});
         onEntryAdded();
-        fetchEntries();
-        fetchAssistanceLevel();
+        fetchEntries(); // Refresh entries list
+        // fetchAssistanceLevel(); // Optionally refresh assistance level if it can change
+        setError(null); // Clear previous errors
       }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const formattedErrors: Record<string, string[]> = {};
-        for (const err of error.errors) {
-          const field = err.path.join('.');
-          if (!formattedErrors[field]) {
-            formattedErrors[field] = [];
-          }
-          formattedErrors[field].push(err.message);
-        }
-        setValidationErrors(formattedErrors);
-      } else {
-        setError('Failed to add journal entry. Please try again.');
-      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "An unknown error occurred while adding the entry.";
+      console.error('Error in handleSubmit:', errorMsg, err);
+      setError(errorMsg);
+    } finally {
+      setIsLoading(false); // Clear loading state
     }
   };
 

@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { SchemaValidationError } from '../types/prisma';
+
+// Define SchemaValidationError locally since import path is causing issues
+class SchemaValidationError extends Error {
+  constructor(message: string, public field?: string, public model?: string) {
+    super(message);
+    this.name = 'SchemaValidationError';
+  }
+}
 
 const PRISMA_RESERVED_WORDS = new Set([
   'select', 'where', 'order', 'and', 'or', 'not', 'if', 'else',
@@ -68,6 +75,55 @@ function validateFieldType(field: z.ZodType, fieldName: string, model?: string):
   );
 }
 
+function checkFieldForRelations(
+  field: z.ZodType,
+  fieldName: string,
+  schemaMap: Map<string, z.ZodSchema<any>>,
+  model?: string
+): void {
+  // Check if field has a relation description
+  if (field.description) {
+    try {
+      const meta = JSON.parse(field.description);
+      if (meta.relation) {
+        const [targetModel] = meta.relation.split('.');
+        if (!schemaMap.has(targetModel)) {
+          throw new SchemaValidationError(
+            `Relation target model '${targetModel}' not found in schema map`,
+            fieldName,
+            model
+          );
+        }
+      }
+    } catch (e) {
+      // Only ignore JSON parse errors, not our validation errors
+      if (!(e instanceof SchemaValidationError)) {
+        // Ignore JSON parse errors
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  // Recursively check array elements
+  if (field instanceof z.ZodArray) {
+    checkFieldForRelations(field.element, fieldName, schemaMap, model);
+  }
+
+  // Recursively check object fields
+  if (field instanceof z.ZodObject) {
+    const shape = field.shape;
+    for (const [key, nestedField] of Object.entries(shape)) {
+      checkFieldForRelations(nestedField as z.ZodType, `${fieldName}.${key}`, schemaMap, model);
+    }
+  }
+
+  // Check optional and nullable wrappers
+  if (field instanceof z.ZodOptional || field instanceof z.ZodNullable) {
+    checkFieldForRelations((field as any)._def.innerType, fieldName, schemaMap, model);
+  }
+}
+
 export function validateRelations(
   schema: z.ZodObject<any>,
   schemaMap: Map<string, z.ZodSchema<any>>,
@@ -75,18 +131,9 @@ export function validateRelations(
 ): void {
   const shape = schema.shape;
   for (const [key, field] of Object.entries(shape)) {
-    if (field instanceof z.ZodObject) {
-      const meta = field.description ? JSON.parse(field.description) : {};
-      if (meta.relation) {
-        const [targetModel] = meta.relation.split('.');
-        if (!schemaMap.has(targetModel)) {
-          throw new SchemaValidationError(
-            `Relation target model '${targetModel}' not found in schema map`,
-            key,
-            model
-          );
-        }
-      }
-    }
+    checkFieldForRelations(field as z.ZodType, key, schemaMap, model);
   }
-} 
+}
+
+// Export the error class as well
+export { SchemaValidationError };

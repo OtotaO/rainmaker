@@ -1,21 +1,22 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Logger } from '../utils/logger';
 
 describe('Logger', () => {
   let logger: Logger;
   let consoleSpies: {
-    debug: jest.SpyInstance;
-    info: jest.SpyInstance;
-    warn: jest.SpyInstance;
-    error: jest.SpyInstance;
+    debug: any;
+    info: any;
+    warn: any;
+    error: any;
   };
 
   beforeEach(() => {
     logger = Logger.getInstance();
     consoleSpies = {
-      debug: jest.spyOn(console, 'debug'),
-      info: jest.spyOn(console, 'info'),
-      warn: jest.spyOn(console, 'warn'),
-      error: jest.spyOn(console, 'error'),
+      debug: vi.spyOn(console, 'debug').mockImplementation(() => {}),
+      info: vi.spyOn(console, 'info').mockImplementation(() => {}),
+      warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
+      error: vi.spyOn(console, 'error').mockImplementation(() => {}),
     };
   });
 
@@ -39,7 +40,7 @@ describe('Logger', () => {
     expect(consoleSpies.info).not.toHaveBeenCalled();
     expect(consoleSpies.warn).not.toHaveBeenCalled();
     expect(consoleSpies.error).toHaveBeenCalledTimes(1);
-    expect(consoleSpies.error).toHaveBeenCalledWith(expect.stringContaining('error message'));
+    expect(consoleSpies.error).toHaveBeenCalledWith('[ERROR] error message');
   });
 
   it('should log all levels when set to debug', () => {
@@ -59,20 +60,13 @@ describe('Logger', () => {
     logger.setLogLevel('info');
     logger.info('test message', { data: 123 });
     
-    expect(consoleSpies.info).toHaveBeenCalledWith(
-      expect.stringContaining('[INFO]'),
-      expect.stringContaining('test message'),
-      expect.objectContaining({ data: 123 })
-    );
+    expect(consoleSpies.info).toHaveBeenCalledWith('[INFO] test message', { data: 123 });
   });
 
   it('should handle undefined log level', () => {
     logger.setLogLevel(undefined);
     logger.info('test message');
     
-    expect(consoleSpies.info).toHaveBeenCalledWith(
-      expect.stringContaining('[INFO]'),
-      expect.stringContaining('test message')
-    );
+    expect(consoleSpies.info).toHaveBeenCalledWith('[INFO] test message');
   });
-}); 
+});

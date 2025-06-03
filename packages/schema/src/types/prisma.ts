@@ -110,24 +110,3 @@ export {
   PrismaSchema,
   SchemaMap,
 };
-
-// Export for CommonJS
-module.exports = {
-  // Types
-  SerializableJson: z.ZodType,
-  DeserializedJson: undefined,
-  PrismaFieldMetadata: {},
-  PrismaModelMetadata: {},
-  ValueOf: undefined,
-  AllowedZodTypeNames: undefined,
-  PrismaType: undefined,
-  PrismaField: {},
-  PrismaModel: {},
-  PrismaSchema: {},
-  SchemaMap: undefined,
-  
-  // Values
-  zodToPrismaTypeMap,
-  SchemaValidationError,
-  SchemaGenerationError
-}; 

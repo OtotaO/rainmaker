@@ -7,13 +7,18 @@ import { logger } from '../lib/logger';
 
 type GitHubIssue = RestEndpointMethodTypes['issues']['listForRepo']['response']['data'][0];
 
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN,
-});
+// Create a function to get the Octokit instance so it can be mocked
+const getOctokit = () => {
+  return new Octokit({
+    auth: process.env.GITHUB_TOKEN,
+  });
+};
 
 // GitHub repository details
-const owner = process.env.GITHUB_OWNER || '';
-const repo = process.env.GITHUB_REPO || '';
+const getRepoDetails = () => ({
+  owner: process.env.GITHUB_OWNER || '',
+  repo: process.env.GITHUB_REPO || '',
+});
 
 export const createGitHubIssue = async (
   title: string,
@@ -21,6 +26,9 @@ export const createGitHubIssue = async (
   labels: string[] = ['PRD']
 ) => {
   try {
+    const octokit = getOctokit();
+    const { owner, repo } = getRepoDetails();
+    
     const response = await octokit.issues.create({
       owner,
       repo,
@@ -45,6 +53,9 @@ export const createGitHubIssue = async (
 
 export const addCommentToIssue = async (issueNumber: number, comment: string) => {
   try {
+    const octokit = getOctokit();
+    const { owner, repo } = getRepoDetails();
+    
     const response = await octokit.issues.createComment({
       owner,
       repo,
@@ -67,6 +78,8 @@ export const addCommentToIssue = async (issueNumber: number, comment: string) =>
 
 export const fetchOpenIssues = async (owner: string, repo: string): Promise<GitHubIssue[]> => {
   try {
+    const octokit = getOctokit();
+    
     const response = await octokit.issues.listForRepo({
       owner,
       repo,
