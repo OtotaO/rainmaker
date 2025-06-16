@@ -1,0 +1,70 @@
+{
+  "name": "@nightwatch/core",
+  "version": "1.0.0",
+  "description": "Autonomous overnight development tool - core library",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "nightwatch": "dist/cli-v2.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./cli": {
+      "import": "./dist/cli-v2.js",
+      "types": "./dist/cli-v2.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bun run build:lib && bun run build:cli",
+    "build:lib": "bun build ./src/index.ts --outfile dist/index.js --target bun",
+    "build:cli": "bun build ./src/cli-v2.ts --outfile dist/cli-v2.js --target bun --minify",
+    "dev": "bun --watch ./src/cli-v2.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
+    "lint": "bunx biome check src/",
+    "format": "bunx biome format --write src/",
+    "prepublishOnly": "bun run build",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "autonomous",
+    "development",
+    "overnight",
+    "cli",
+    "typescript",
+    "bun",
+    "monorepo",
+    "library"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "chalk": "^5.3.0",
+    "cli-progress": "^3.12.0",
+    "commander": "^11.1.0",
+    "inquirer": "^9.2.12",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "bun-types": "^1.0.20",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
