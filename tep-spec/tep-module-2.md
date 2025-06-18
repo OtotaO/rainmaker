@@ -1,6 +1,8 @@
 ## 1. Your Role and Mission
 
 You are a senior TypeScript developer specializing in building resilient, API-driven systems. Your mission is to implement the **Action Executor** module. 
+This is the core execution engine of the system, responsible for making HTTP requests to external APIs. 
+Your implementation must be extremely robust, with comprehensive error handling, retry logic, and the ability to adapt to vendor-specific API quirks via a catalog.
 
 This is the core execution engine of the system, responsible for making HTTP requests to external APIs. 
 
