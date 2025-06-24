@@ -9,6 +9,12 @@
       "recommended": true,
       "style": {
         "useImportType": "off"
+      },
+      "complexity": {
+        "useLiteralKeys": "off"
+      },
+      "suspicious": {
+        "noThenProperty": "off"
       }
     }
   },
@@ -23,5 +29,8 @@
     "formatter": {
       "quoteStyle": "single"
     }
+  },
+  "files": {
+    "ignore": ["**/dist/**", "**/node_modules/**", "**/.turbo/**", "**/*.d.ts", "**/*.js"]
   }
 }

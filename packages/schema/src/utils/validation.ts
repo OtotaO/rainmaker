@@ -1,4 +1,5 @@
-import { z } from 'zod';
+import { z } from '../zod';
+import { z as zRaw } from '../zod-base';
 import { SchemaValidationError } from '../types/prisma';
 
 const PRISMA_RESERVED_WORDS = new Set([
@@ -29,7 +30,7 @@ export function validateFieldName(name: string, model?: string): void {
 }
 
 export function validateSchema(schema: z.ZodType, model?: string): void {
-  if (!(schema instanceof z.ZodObject)) {
+  if (!(schema instanceof zRaw.ZodObject)) {
     throw new SchemaValidationError(
       'Schema must be a ZodObject',
       undefined,
@@ -46,26 +47,26 @@ export function validateSchema(schema: z.ZodType, model?: string): void {
 
 function validateFieldType(field: z.ZodType, fieldName: string, model?: string): void {
   if (
-    field instanceof z.ZodString ||
-    field instanceof z.ZodNumber ||
-    field instanceof z.ZodBoolean ||
-    field instanceof z.ZodDate ||
-    field instanceof z.ZodEnum ||
-    (field instanceof z.ZodUnion &&
+    field instanceof zRaw.ZodString ||
+    field instanceof zRaw.ZodNumber ||
+    field instanceof zRaw.ZodBoolean ||
+    field instanceof zRaw.ZodDate ||
+    field instanceof zRaw.ZodEnum ||
+    (field instanceof zRaw.ZodUnion &&
       (
-        field as z.ZodUnion<[
-          z.ZodLiteral<string>,
-          z.ZodLiteral<string>,
-          ...z.ZodLiteral<string>[]
+        field as zRaw.ZodUnion<[
+          zRaw.ZodLiteral<string>,
+          zRaw.ZodLiteral<string>,
+          ...zRaw.ZodLiteral<string>[]
         ]>
       )._def.options.every(
-        (opt: z.ZodLiteral<string>) => opt instanceof z.ZodLiteral
+        (opt: zRaw.ZodLiteral<string>) => opt instanceof zRaw.ZodLiteral
       )) ||
-    field instanceof z.ZodObject ||
-    field instanceof z.ZodArray ||
-    field instanceof z.ZodOptional ||
-    field instanceof z.ZodNullable ||
-    field instanceof z.ZodLazy
+    field instanceof zRaw.ZodObject ||
+    field instanceof zRaw.ZodArray ||
+    field instanceof zRaw.ZodOptional ||
+    field instanceof zRaw.ZodNullable ||
+    field instanceof zRaw.ZodLazy
   ) {
     // Valid types
     return;
@@ -79,13 +80,13 @@ function validateFieldType(field: z.ZodType, fieldName: string, model?: string):
 }
 
 export function validateRelations(
-  schema: z.ZodObject<any>,
-  schemaMap: Map<string, z.ZodSchema<any>>,
+  schema: zRaw.ZodObject<zRaw.ZodRawShape>,
+  schemaMap: Map<string, zRaw.ZodSchema>,
   model?: string
 ): void {
   const shape = schema.shape;
   for (const [key, field] of Object.entries(shape)) {
-    if (field instanceof z.ZodObject) {
+    if (field instanceof zRaw.ZodObject) {
       const meta = field.description ? JSON.parse(field.description) : {};
       if (meta.relation) {
         const [targetModel] = meta.relation.split('.');
@@ -97,9 +98,9 @@ export function validateRelations(
           );
         }
       }
-    } else if (field instanceof z.ZodArray) {
+    } else if (field instanceof zRaw.ZodArray) {
       const elementType = field.element;
-      if (elementType instanceof z.ZodObject) {
+      if (elementType instanceof zRaw.ZodObject) {
         const meta = elementType.description ? JSON.parse(elementType.description) : {};
         if (meta.relation) {
           const [targetModel] = meta.relation.split('.');

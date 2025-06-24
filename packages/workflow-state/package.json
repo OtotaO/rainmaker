@@ -1,0 +1,19 @@
+{
+  "name": "@rainmaker/workflow-state",
+  "version": "1.0.0",
+  "description": "Workflow state management using trigger.dev",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trigger.dev/sdk": "^3.0.0",
+    "@rainmaker/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.8.3"
+  }
+}

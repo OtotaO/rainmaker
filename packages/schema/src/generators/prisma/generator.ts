@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '../../zod-base';
 import type { DeserializedJson, PrismaType, SerializableJson, SchemaGenerationOptions } from '../../types/prisma';
 import { getPrismaModelMetadata, handleReservedKeyword, unwrapType } from '../../utils/utils';
 import { validateSchema, validateRelations } from '../../utils/validation';
@@ -25,7 +25,7 @@ export function generatePrismaModels(
       try {
         validateSchema(schema, modelName);
         if (options.validateRelations) {
-          validateRelations(schema as z.ZodObject<any>, schemaMap, modelName);
+          validateRelations(schema as z.ZodObject<z.ZodRawShape>, schemaMap, modelName);
         }
       } catch (error) {
         logger.error('Schema validation failed', error);

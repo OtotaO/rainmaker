@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "bun run src/action-executor-jobs.ts",
-    "build": "bun build src/action-executor-jobs.ts --outdir=dist",
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir=dist",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
@@ -14,9 +14,8 @@
     "format": "biome format --write ."
   },
   "dependencies": {
-    "@trigger.dev/sdk": "3.3.17",
-    "axios": "1.7.2",
-    "zod": "3.24.2"
+    "@rainmaker/schema": "workspace:*",
+    "@rainmaker/workflow-state": "workspace:*"
   },
   "devDependencies": {
     "@trigger.dev/testing": "3.3.12",
