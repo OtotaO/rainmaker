@@ -12,9 +12,9 @@
     "check": "bunx @biomejs/biome check --apply .",
     "type-check": "bun --bun tsc --noEmit",
     "verify": "bun run type-check && bun run build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test": "NODE_OPTIONS=--experimental-vm-modules vitest run",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules vitest",
+    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules vitest run --coverage",
     "test:themes": "vitest run src/__tests__/themes.test.ts",
     "test:themes:e2e": "cypress run --spec 'cypress/e2e/themes.cy.ts'",
     "test:themes:all": "bun run test:themes"
