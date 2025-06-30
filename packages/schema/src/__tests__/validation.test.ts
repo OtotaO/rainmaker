@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '../zod';
 import { validateFieldName, validateSchema, validateRelations } from '../utils/validation';
 import { SchemaValidationError, SchemaMap } from '../types/prisma';
 import { StatusSchema } from '../types/enums';
@@ -30,7 +30,7 @@ describe('Validation Utilities', () => {
         name: z.string(),
         age: z.number(),
         isActive: z.boolean(),
-        createdAt: z.date(),
+        createdAt: z.dateString(),
         status: StatusSchema,
       });
 
@@ -71,7 +71,7 @@ describe('Validation Utilities', () => {
         }).describe(JSON.stringify({ relation: 'User' })),
       });
 
-      const schemaMap = new Map<string, z.ZodSchema<any>>([
+      const schemaMap = new Map<string, z.ZodSchema>([
         ['User', userSchema],
         ['Post', postSchema],
       ]);
@@ -97,7 +97,7 @@ describe('Validation Utilities', () => {
         }).describe(JSON.stringify({ relation: 'User' })),
       });
 
-      const schemaMap = new Map<string, z.ZodSchema<any>>([
+      const schemaMap = new Map<string, z.ZodSchema>([
         ['User', userSchema],
         ['Post', postSchema],
       ]);

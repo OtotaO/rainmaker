@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '../zod-base';
 import type { PrismaFieldMetadata, PrismaModelMetadata } from '../types/prisma';
 
 export function capitalizeFirstLetter(str: string): string {

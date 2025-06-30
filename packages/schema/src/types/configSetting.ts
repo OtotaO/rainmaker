@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '../zod';
 
 /**
  * Schema for application configuration settings
@@ -6,13 +6,13 @@ import { z } from 'zod';
  */
 export const ConfigSettingSchema = z.object({
   id: z.string().uuid().optional(),
-  key: z.string().min(1, "Key cannot be empty").max(255, "Key too long"),  
+  key: z.string().min(1).max(255),  
   value: z.union([z.string(), z.number(), z.boolean()]),
   description: z.string().optional(),
   category: z.string().optional(),
-  isEncrypted: z.boolean().default(false),
-  lastModified: z.date().optional(),
-  version: z.number().int().positive().default(1)
+  isEncrypted: z.boolean(),
+  lastModified: z.dateString().optional(),
+  version: z.number().int().positive()
 });
 
 export type ConfigSetting = z.infer<typeof ConfigSettingSchema>;

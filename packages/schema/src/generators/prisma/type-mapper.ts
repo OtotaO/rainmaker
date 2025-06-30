@@ -1,11 +1,10 @@
-import { z } from 'zod';
+import { z } from '../../zod-base';
 import type { 
   AllowedZodTypeNames, 
   DeserializedJson, 
   PrismaFieldMetadata, 
   PrismaType, 
-  SerializableJson, 
-  ValueOf 
+  SerializableJson
 } from '../../types/prisma';
 import { capitalizeFirstLetter, getPrismaFieldMetadata } from '../../utils/utils';
 
@@ -80,6 +79,11 @@ export function mapZodFieldToPrisma(
     const zodTypeName = field.constructor.name as AllowedZodTypeNames;
     prismaType = zodToPrismaTypeMap[zodTypeName];
 
+    // Special handling for datetime strings - they should map to DateTime in Prisma
+    if (field instanceof z.ZodString && field._def.checks?.some(check => check.kind === 'datetime')) {
+      prismaType = 'DateTime';
+    }
+
     // Add @id attribute for id fields
     if (fieldName === 'id') {
       attributes.push('@id');
@@ -126,7 +130,7 @@ function formatDefaultValue(value: string, prismaType: string): string {
 }
 
 export function getEnumName(
-  field: z.ZodEnum<[string, ...string[]]>,
+  _field: z.ZodEnum<[string, ...string[]]>,
   fieldName: string,
   schema: z.ZodSchema<DeserializedJson>,
 ): string {

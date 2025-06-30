@@ -1,9 +1,9 @@
-import { z } from 'zod';
+import type { ZodType } from '../zod-base';
 import { LogLevel } from '../logger';
 
 // Type definitions
-type SerializableJson = z.ZodType;
-type DeserializedJson = any;
+type SerializableJson = ZodType;
+type DeserializedJson = unknown;
 
 interface PrismaFieldMetadata {
   unique?: boolean;
@@ -90,7 +90,7 @@ interface PrismaSchema {
   models: PrismaModel[];
 }
 
-type SchemaMap = Record<string, z.ZodObject<any>>;
+type SchemaMap = Record<string, ZodType>;
 
 // Export for ESM
 export {
@@ -111,23 +111,4 @@ export {
   SchemaMap,
 };
 
-// Export for CommonJS
-module.exports = {
-  // Types
-  SerializableJson: z.ZodType,
-  DeserializedJson: undefined,
-  PrismaFieldMetadata: {},
-  PrismaModelMetadata: {},
-  ValueOf: undefined,
-  AllowedZodTypeNames: undefined,
-  PrismaType: undefined,
-  PrismaField: {},
-  PrismaModel: {},
-  PrismaSchema: {},
-  SchemaMap: undefined,
-  
-  // Values
-  zodToPrismaTypeMap,
-  SchemaValidationError,
-  SchemaGenerationError
-}; 
+ 

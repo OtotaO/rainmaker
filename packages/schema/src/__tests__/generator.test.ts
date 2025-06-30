@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '../zod';
 import { generatePrismaModels } from '../generators/prisma/generator';
 import type { SchemaMap } from '../types/prisma';
 
@@ -8,7 +8,7 @@ describe('Schema Generator', () => {
     name: z.string(),
     email: z.string().email(),
     age: z.number().optional(),
-    createdAt: z.date(),
+    createdAt: z.dateString(),
   });
 
   const PostSchema = z.object({
@@ -16,7 +16,7 @@ describe('Schema Generator', () => {
     title: z.string(),
     content: z.string(),
     authorId: z.string(),
-    createdAt: z.date(),
+    createdAt: z.dateString(),
   });
 
   const schemaMap: SchemaMap = {
@@ -52,6 +52,7 @@ describe('Schema Generator', () => {
 
   it('should handle date fields correctly', () => {
     const schema = generatePrismaModels(new Map(Object.entries(schemaMap)));
+    // dateString() maps to String in Prisma since it's an ISO string
     expect(schema).toContain('createdAt DateTime');
   });
 
