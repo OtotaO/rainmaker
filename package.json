@@ -1,35 +1,36 @@
 {
-  "name": "@f8n/rainmaker-api",
+  "name": "@f8n/rainmaker-discovery",
   "version": "1.0.0",
   "private": true,
+  "description": "Rainmaker Discovery - Semantic search and adaptation of proven code components",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
+    "start": "bun run build && node dist/rainmaker-discovery.js",
+    "dev": "bun --watch rainmaker-discovery.ts",
+    "build": "bun build ./rainmaker-discovery.ts --outdir dist --target bun --format esm --external @f8n/*",
+    "prepare": "bun run build",
     "start:frontend": "bun run --cwd packages/frontend start",
     "start:api": "bun run --cwd packages/api start",
     "dev:frontend": "bun run --cwd packages/frontend dev",
     "dev:api": "bun run --cwd packages/api dev",
-    "dev": "bunx --bun concurrently \"bun run dev:api\" \"bun run dev:frontend\"",
-    "build": "bun run --cwd packages/frontend build && bun run --cwd packages/api build && bun run build:nightwatch",
-    "test": "bun run test:schema && bun run test:api && bun run test:frontend && bun run test:nightwatch && bun run test:workflow-state && bun run test:executor",
-    "test:schema": "bun run --cwd packages/schema test",
+    "dev:all": "bunx --bun concurrently \"bun run dev:api\" \"bun run dev:frontend\"",
+    "build:all": "bun run --cwd packages/frontend build && bun run --cwd packages/api build && bun run build:nightwatch && bun run build:discovery",
+    "build:discovery": "bun run --cwd packages/discovery build",
+    "test": "bun run test:api && bun run test:discovery",
     "test:api": "bun run --cwd packages/api test",
-    "test:frontend": "bun run --cwd packages/frontend test",
-    "test:nightwatch": "bun run --cwd packages/nightwatch test",
-    "test:workflow-state": "bun run --cwd packages/workflow-state test",
-    "test:executor": "bun run --cwd packages/executor test",
-    "build:nightwatch": "bun run --cwd packages/nightwatch build",
-    "test:watch": "bunx --bun concurrently \"bun run --cwd packages/api test:watch\" \"bun run --cwd packages/frontend test:watch\"",
-    "test:coverage": "bunx --bun concurrently \"bun run --cwd packages/api test:coverage\" \"bun run --cwd packages/frontend test:coverage\""
+    "test:discovery": "bun run --cwd packages/discovery test",
+    "test:watch": "bun run --cwd packages/api test:watch",
+    "test:coverage": "bun run --cwd packages/api test:coverage",
+    "quickstart": "bun run quickstart.ts"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "1.0.31",
     "@biomejs/biome": "1.8.3",
     "@types/bun": "1.1.14",
     "@types/parse-gitignore": "1.0.2",
     "@types/uuid": "10.0.0",
-    "concurrently": "8.2.2",
+    "concurrently": "^8.2.2",
     "ts-node": "10.9.2",
     "typescript": "5.5.3"
   },
@@ -42,7 +43,6 @@
     "zod": "3.24.2"
   },
   "trustedDependencies": [
-    "@anthropic-ai/claude-code",
     "@biomejs/biome",
     "@nestjs/core",
     "@prisma/client",

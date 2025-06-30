@@ -1,245 +1,158 @@
-# Rainmaker - Product CoPilot
+# Rainmaker Discovery
 
-Rainmaker is an internal tool that accelerates feature development
-from idea to code in under an hour.
+> **Semantic search engine for proven code components**
+
+Rainmaker Discovery helps you find, understand, and adapt existing code solutions instead of writing everything from scratch.
 
 ## Features
 
-- Automated product development lifecycle
-- Generates PRD, TRD, and detailed task specifications
-- Adaptive guidance throughout the process
-- Ensures high-quality, well-documented code
-- Type-safe configuration management with formal verification
+- 🔍 Semantic search across codebases
+- 🤖 AI-powered code understanding
+- 🛠️ Automatic code adaptation
+- 📦 Ready-to-use components
+- 🔄 Version control integration
 
-## How It Works
+## Installation
 
-1. Input your feature idea
-2. Follow Rainmaker's prompts and guidance
-3. Review and approve generated documents
-4. Implement code based on detailed specifications
+```bash
+# Install dependencies
+bun install
 
-## Benefits
+# Build the project
+bun run build
 
-- Rapid feature development
-- Consistent product documentation
-- Improved code quality and documentation
-- Reduced time-to-market
+# Run in development mode
+bun run dev
 
-## Prerequisites
-
-- [Bun](https://bun.sh/) installed on your system
-- [PostgreSQL](https://www.postgresql.org/) installed via Homebrew
-
-## Setup
-
-1. Clone the repository:
-   ```
-   gh repo clone f8n-ai rainmaker
-   cd rainmaker
-   ```
-
-2. Install dependencies:
-   ```
-   bun install
-   ```
-   Bun's lockfile `bun.lockb` ensures consistent dependency versions.
-
-3. Set up environment variables:
-   - Copy `packages/api/.env.example` to `packages/api/.env`
-   - Fill in the required values in the `.env` file:
-
-     ```
-     ANTHROPIC_API_KEY=your_anthropic_api_key_here
-     GITHUB_TOKEN=your_github_personal_access_token_here
-     GITHUB_OWNER=f8n-ai
-     GITHUB_REPO=rainmaker
-    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rainmaker"
-     ```
-
-4. To obtain a GitHub Personal Access Token:
-   - Go to GitHub Settings > Developer settings > Personal access tokens
-   - Click "Generate new token"
-   - Give it a descriptive name and select the "repo" scope
-   - Copy the generated token and paste it into your `.env` file
-
-5. Ensure PostgreSQL is running:
-   ```
-   brew services start postgresql
-   createdb rainmaker || true
-   ```
-
-6. Initialize the database:
-   ```
-   cd packages/api
-   bun prisma migrate dev
-   ```
-
-## Running the Application
-
-1. Start the development server:
-   ```
-   bun run dev
-   ```
-
-2. Open your browser and navigate to `http://localhost:3000` to use the application.
+# Run tests
+bun test
+```
 
 ## Usage
 
-1. Answer the initial PRD questions provided by the AI.
-2. Review and edit the AI-generated responses as needed.
-3. Proceed through the refinement process:
-   - Epic and Task Breakdown
-   - MVP Feature Prioritization
-   - Acceptance Criteria Definition
-   - Team Review
-4. Finalize the MVP plan.
-5. Create a GitHub issue with the finalized PRD by clicking the "Create GitHub Issue" button.
+```bash
+# Run the discovery CLI
+bun run rainmaker-discovery
 
-## Project Structure
-
-```
-.
-├── packages/
-│   ├── api/
-│   │   └── src/
-│   │       ├── refinement/
-│   │       ├── github/
-│   │       └── server.ts
-│   │   └── prisma/
-│   │       └── schema.prisma 
-│   ├── frontend/
-│   │   └── src/
-│   │       ├── components/
-│   │       └── App.tsx
-│   └── shared/
-│       └── src/
-│           └── types.ts
-├── README.md
-├── security-checklist.md
-└── package.json
+# Or use directly with npx
+npx @f8n/rainmaker-discovery
 ```
 
-## Security
+## Development
 
-Security is a critical aspect of Rainmaker. The project includes a comprehensive security checklist to ensure all best practices are followed:
+### Project Structure
 
-1. Review the [security-checklist.md](./security-checklist.md) file for detailed security guidelines
-2. Implement all required security measures during development
-3. Follow the security checklist before deploying to production
+- `rainmaker-discovery.ts` - Main entry point
+- `src/` - Source code
+- `dist/` - Compiled output
+- `packages/` - Monorepo packages
 
-Key security considerations include:
-- Row-Level Security (RLS) for PostgreSQL
-- API rate limiting
-- CAPTCHA for authentication forms
-- Web Application Firewall (WAF) protection
-- Proper handling of API keys and secrets
+### Commands
 
-## Testing
+- `bun run build` - Build the project
+- `bun run dev` - Run in development mode with watch
+- `bun test` - Run tests
+- `bun run lint` - Lint the codebase
 
-The project uses Vitest for API and frontend testing, and Jest for schema testing.
-Run the full test suite with **bun run** to invoke the configured scripts (avoid `bun test`, which uses Bun's built-in runner):
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a pull request
+
+## License
+
+MIT
+bun run dev
+```
+
+Then visit:
+- 📡 API Server: http://localhost:3001
+- 🌐 Web Interface: http://localhost:3000
+
+## Architecture
+
+```
+packages/
+├── discovery/              # Core discovery engine
+│   ├── services/
+│   │   ├── github-indexer.ts      # Crawls and indexes GitHub
+│   │   ├── code-analyzer.ts       # Understands code structure
+│   │   ├── socratic-dialogue.ts   # Guides user refinement
+│   │   ├── adaptation-engine.ts   # Transforms code intelligently
+│   │   └── discovery-service.ts   # Orchestrates everything
+│   └── types/              # Zod schemas for type safety
+├── api/                    # Express API server
+└── frontend/               # React UI
+    └── components/Discovery/      # Discovery flow UI
+```
+
+## Key Features
+
+### 1. Semantic Understanding
+- Analyzes code structure, not just keywords
+- Understands patterns, frameworks, and dependencies
+- Generates embeddings for similarity matching
+
+### 2. Socratic Dialogue
+- Guides users through refinement questions
+- Builds precise search criteria
+- Learns from user choices
+
+### 3. Intelligent Adaptation
+- Converts naming conventions (camelCase → snake_case)
+- Adjusts import/export styles
+- Replaces dependencies
+- Injects custom code at designated points
+
+### 4. Quality Filtering
+- Minimum star requirements
+- Test coverage detection
+- License compatibility
+- Recent maintenance activity
+
+## The Philosophy
+
+> "The best code is code you don't have to write. The second best is code someone else already debugged." - Every Developer Ever
+
+Rainmaker Discovery embraces this truth. Instead of generating code that might work, we find code that definitely works and make it yours.
+
+## Documentation
+
+- [Migration Guide](./MIGRATION_TO_DISCOVERY.md) - How we got here
+- [Discovery README](./DISCOVERY_README.md) - Detailed system overview
+- [Before vs After](./BEFORE_VS_AFTER.md) - Comparison with the old approach
+
+## Development
 
 ```bash
+# Install dependencies
+bun install
+
+# Start development servers
+bun run dev
+
+# Run tests
 bun run test
+
+# Build for production
+bun run build
 ```
 
-You can also run tests for specific packages:
+## Environment Setup
 
-```bash
-# Run schema tests
-bun run test:schema
+Copy `packages/api/.env.example` to `packages/api/.env` and configure:
 
-# Run API tests
-bun run test:api
-
-# Run frontend tests
-bun run test:frontend
+```env
+GITHUB_TOKEN=your_github_token
+ANTHROPIC_API_KEY=your_anthropic_key
+DATABASE_URL=your_database_url
 ```
 
-### Test Structure
+## Contributing
 
-- **Schema Tests**: Located in `packages/schema/src/__tests__/`
-- **API Tests**: Located in `packages/api/src/__tests__/`
-- **Frontend Tests**: Located in `packages/frontend/src/__tests__/`
+This represents a fundamental shift in how we think about AI-assisted development. We're moving from "AI writes code" to "AI finds and adapts proven solutions."
 
-Each package has its own test configuration:
-- API: `packages/api/vitest.config.ts` and `packages/api/vitest.setup.ts`
-- Frontend: `packages/frontend/vitest.config.ts` and `packages/frontend/vitest.setup.ts`
-- Schema: `packages/schema/jest.config.js`
-
-### Mocking
-
-The test setup includes mocks for:
-- Anthropic API client
-- File system operations
-- GitHub API
-- Browser environment for frontend tests
-
-### Running Tests in Watch Mode
-
-During development, you can run tests in watch mode:
-
-```bash
-# Watch all tests
-bun run test:watch
-
-# Watch specific package tests
-bun run test:api:watch
-bun run test:frontend:watch
-```
-
-## Anthropic Integration
-
-Rainmaker uses Anthropic's Claude AI model to power various features:
-
-1. **PRD Generation**: Generates lean PRDs from user suggestions
-2. **Acceptance Criteria**: Generates acceptance criteria for features
-3. **Epic Task Breakdown**: Breaks down PRDs into epics and tasks
-4. **MVP Prioritization**: Prioritizes features for MVP development
-
-The integration uses the Anthropic Claude 3.7 Sonnet (claude-3-7-sonnet-latest) model for all AI operations.
-
-### Recent Improvements
-
-The application has been enhanced with the following improvements:
-
-1. **Standardized Testing Framework**: Implemented Vitest for API and frontend testing with proper mocking and configuration.
-2. **Robust API Key Handling**: The application now reads the API key directly from the .env file, ensuring consistent usage throughout the application.
-3. **Fixed PRD Question Flow**: Fixed an issue where the PRD question flow would repeat the third question instead of proceeding to generate the PRD.
-4. **Enhanced Error Handling**: Added validation to ensure all required responses are available before attempting to generate the PRD.
-5. **Improved Logging**: Added additional logging to help with debugging and troubleshooting.
-6. **Flexible Response Handling**: The acceptanceCriteria service now handles both JSON and plain text responses from the AI model.
-7. **Formal Verification**: Added Dafny-based formal verification for the ConfigSetting component, ensuring critical properties like uniqueness constraints and validation rules are mathematically proven.
-8. **Configuration Management**: Implemented a type-safe configuration system that supports multiple value types (string, number, boolean) with database persistence.
-
-### Testing the Anthropic Integration
-
-You can test the Anthropic integration by running:
-
-```bash
-cd packages/api
-bun run src/test-anthropic.ts
-```
-
-Or by making a request to the test endpoint:
-
-```bash
-curl http://localhost:3001/api/test-anthropic
-```
-
-## Troubleshooting
-
-If you encounter any issues:
-
-1. Ensure all environment variables are correctly set in `packages/api/.env`.
-2. Verify that your Anthropic API key is valid and has sufficient quota.
-2. Check that you have the latest version of Bun installed.
-3. If you're having issues with PostgreSQL:
-   - Run `brew services list` to verify the service is running
-   - Restart with `brew services restart postgresql`
-4. For database issues:
-   - Check connections with `bun prisma studio`
-   - Reset the database with `bun prisma migrate reset` if needed
-5. Clear your browser cache and restart the development server.
-
-For more help, please open an issue on the GitHub repository.
+Contributions welcome! 🚀

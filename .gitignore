@@ -24,9 +24,19 @@ lerna-debug.log*
 error.log
 combined.log
 
-# Caches
+# Build outputs
+dist/
+build/
 
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Caches
 .cache
+.bun
+node_modules/
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 

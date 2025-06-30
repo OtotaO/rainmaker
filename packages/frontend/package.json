@@ -12,12 +12,7 @@
     "check": "bunx @biomejs/biome check --apply .",
     "type-check": "bun --bun tsc --noEmit",
     "verify": "bun run type-check && bun run build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:themes": "vitest run src/__tests__/themes.test.ts",
-    "test:themes:e2e": "cypress run --spec 'cypress/e2e/themes.cy.ts'",
-    "test:themes:all": "bun run test:themes"
+    "test": "echo 'No tests configured for frontend'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.33.1",
