@@ -68,7 +68,6 @@ export class AdaptationEngine {
       retainLines: false,
       compact: false,
       concise: false,
-      quotes: context.project.conventions.naming === 'snake_case' ? 'double' : 'single',
     });
     
     // Format the code
@@ -164,21 +163,22 @@ export class AdaptationEngine {
     });
     
     // Find the injection location and apply
+    const self = this;
     traverse(ast, {
       enter(path) {
-        if (this.matchesLocation(path, injectionPoint.location)) {
+        if (self.matchesLocation(path, injectionPoint.location)) {
           switch (transformation.position) {
             case 'before':
-              this.injectBefore(path, codeToInject);
+              self.injectBefore(path, codeToInject);
               break;
             case 'after':
-              this.injectAfter(path, codeToInject);
+              self.injectAfter(path, codeToInject);
               break;
             case 'replace':
-              this.injectReplace(path, codeToInject);
+              self.injectReplace(path, codeToInject);
               break;
             case 'wrap':
-              this.injectWrap(path, codeToInject);
+              self.injectWrap(path, codeToInject);
               break;
           }
         }
@@ -194,7 +194,8 @@ export class AdaptationEngine {
       // Convert between naming conventions
       traverse(ast, {
         Identifier(path) {
-          if (path.isReferencedIdentifier() || path.isBindingIdentifier()) {
+          // Check if this identifier should be renamed (skip built-ins and keywords)
+          if (path.isReferencedIdentifier() && !isBuiltinIdentifier(path.node.name)) {
             path.node.name = convertNaming(
               path.node.name,
               transformation.from,
@@ -241,25 +242,186 @@ export class AdaptationEngine {
    */
   private convertErrorHandling(ast: any, from: string, to: string): void {
     if (from === 'exceptions' && to === 'promises') {
-      // Convert try-catch to promise chains
-      traverse(ast, {
-        TryStatement(path) {
-          // This is complex - would need careful implementation
-          logger.debug('Converting try-catch to promises');
-        },
-      });
+      this.convertTryCatchToPromises(ast);
     } else if (from === 'promises' && to === 'async-await') {
-      // Convert .then() chains to async/await
-      traverse(ast, {
-        CallExpression(path) {
-          if (t.isMemberExpression(path.node.callee) &&
-              t.isIdentifier(path.node.callee.property, { name: 'then' })) {
-            // This is complex - would need careful implementation
-            logger.debug('Converting promises to async/await');
-          }
-        },
-      });
+      this.convertPromisesToAsyncAwait(ast);
+    } else if (from === 'exceptions' && to === 'result-types') {
+      this.convertTryCatchToResultTypes(ast);
+    } else if (from === 'async-await' && to === 'promises') {
+      this.convertAsyncAwaitToPromises(ast);
     }
+  }
+
+  /**
+   * Convert try-catch blocks to promise chains
+   */
+  private convertTryCatchToPromises(ast: any): void {
+    traverse(ast, {
+      TryStatement(path) {
+        const tryBlock = path.node.block;
+        const catchClause = path.node.handler;
+        const finallyBlock = path.node.finalizer;
+
+        if (!catchClause) return;
+
+        // Create a promise wrapper
+        const promiseExpression = t.callExpression(
+          t.memberExpression(
+            t.identifier('Promise'),
+            t.identifier('resolve')
+          ),
+          []
+        );
+
+        // Convert try block to .then()
+        const thenCallback = t.arrowFunctionExpression(
+          [],
+          tryBlock
+        );
+
+        let chainExpression = t.callExpression(
+          t.memberExpression(promiseExpression, t.identifier('then')),
+          [thenCallback]
+        );
+
+        // Add catch handler
+        if (catchClause.param && t.isIdentifier(catchClause.param)) {
+          const catchCallback = t.arrowFunctionExpression(
+            [catchClause.param],
+            catchClause.body
+          );
+          chainExpression = t.callExpression(
+            t.memberExpression(chainExpression, t.identifier('catch')),
+            [catchCallback]
+          );
+        }
+
+        // Add finally block if present
+        if (finallyBlock) {
+          const finallyCallback = t.arrowFunctionExpression(
+            [],
+            finallyBlock
+          );
+          chainExpression = t.callExpression(
+            t.memberExpression(chainExpression, t.identifier('finally')),
+            [finallyCallback]
+          );
+        }
+
+        // Replace the try statement with the promise chain
+        path.replaceWith(t.expressionStatement(chainExpression));
+      },
+    });
+  }
+
+  /**
+   * Convert promise chains to async/await
+   */
+  private convertPromisesToAsyncAwait(ast: any): void {
+    const self = this;
+    traverse(ast, {
+      CallExpression(path) {
+        if (self.isPromiseChain(path.node)) {
+          self.transformPromiseChainToAsyncAwait(path);
+        }
+      },
+    });
+  }
+
+  /**
+   * Convert try-catch to Result types (Either/Option pattern)
+   */
+  private convertTryCatchToResultTypes(ast: any): void {
+    traverse(ast, {
+      TryStatement(path) {
+        const tryBlock = path.node.block;
+        const catchClause = path.node.handler;
+
+        if (!catchClause) return;
+
+        // Wrap try block in a function that returns Result<T, E>
+        const resultFunction = t.arrowFunctionExpression(
+          [],
+          t.blockStatement([
+            ...tryBlock.body,
+            t.returnStatement(
+              t.callExpression(
+                t.memberExpression(t.identifier('Result'), t.identifier('ok')),
+                [t.identifier('result')] // Assumes result variable exists
+              )
+            )
+          ])
+        );
+
+        // Create error handling
+        const errorParam = catchClause.param && t.isIdentifier(catchClause.param) 
+          ? catchClause.param 
+          : t.identifier('error');
+        const errorHandler = t.callExpression(
+          t.memberExpression(t.identifier('Result'), t.identifier('error')),
+          [errorParam]
+        );
+
+        // Replace with Result pattern
+        const resultExpression = t.tryStatement(
+          t.blockStatement([
+            t.returnStatement(resultFunction)
+          ]),
+          t.catchClause(
+            catchClause.param,
+            t.blockStatement([
+              t.returnStatement(errorHandler)
+            ])
+          )
+        );
+
+        path.replaceWith(resultExpression);
+      },
+    });
+  }
+
+  /**
+   * Convert async/await back to promises
+   */
+  private convertAsyncAwaitToPromises(ast: any): void {
+    traverse(ast, {
+      AwaitExpression(path) {
+        // Convert await expr to expr.then()
+        const awaitedExpression = path.node.argument;
+        
+        // Find the containing function to transform
+        const functionPath = path.getFunctionParent();
+        if (functionPath && functionPath.node.async) {
+          // This is complex - would need to restructure the entire function
+          logger.debug('Converting async/await to promises - complex transformation');
+        }
+      },
+    });
+  }
+
+  /**
+   * Check if a call expression is a promise chain
+   */
+  private isPromiseChain(node: t.CallExpression): boolean {
+    if (!t.isMemberExpression(node.callee)) return false;
+    
+    const property = node.callee.property;
+    if (!t.isIdentifier(property)) return false;
+    
+    return ['then', 'catch', 'finally'].includes(property.name);
+  }
+
+  /**
+   * Transform a promise chain to async/await
+   */
+  private transformPromiseChainToAsyncAwait(path: any): void {
+    // This is a complex transformation that would need to:
+    // 1. Identify the entire chain
+    // 2. Extract the promise operations
+    // 3. Convert to sequential await statements
+    // 4. Handle error cases with try-catch
+    
+    logger.debug('Promise chain to async/await transformation - complex implementation needed');
   }
   
   /**
@@ -403,6 +565,29 @@ export class AdaptationEngine {
     // Implementation depends on specific use case
     logger.debug('Wrap injection not yet implemented');
   }
+}
+
+/**
+ * Check if an identifier is a built-in JavaScript/TypeScript identifier
+ */
+function isBuiltinIdentifier(name: string): boolean {
+  const builtins = new Set([
+    // JavaScript built-ins
+    'console', 'window', 'document', 'global', 'process', 'Buffer',
+    'Array', 'Object', 'String', 'Number', 'Boolean', 'Date', 'RegExp',
+    'Promise', 'Error', 'TypeError', 'ReferenceError', 'SyntaxError',
+    'Math', 'JSON', 'parseInt', 'parseFloat', 'isNaN', 'isFinite',
+    'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval',
+    // Common framework identifiers
+    'React', 'Component', 'useState', 'useEffect', 'useContext',
+    'Vue', 'computed', 'ref', 'reactive', 'watch',
+    // Node.js built-ins
+    'require', 'module', 'exports', '__dirname', '__filename',
+    // TypeScript built-ins
+    'any', 'unknown', 'never', 'void', 'undefined', 'null'
+  ]);
+  
+  return builtins.has(name) || /^[A-Z][a-z]*$/.test(name); // Skip PascalCase (likely types)
 }
 
 /**
