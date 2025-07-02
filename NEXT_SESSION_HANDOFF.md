@@ -1,10 +1,10 @@
-# Next Session Handoff - Phase 2.4 BoundaryML Integration
+# Next Session Handoff - Phase 3.1 Socratic Dialogue Enhancement
 
-## 🎯 Current Status: Phase 2.3 COMPLETE ✅
+## 🎯 Current Status: Phase 2.4 COMPLETE ✅
 
 **Date**: January 2025  
-**Duration**: ~3 hours  
-**Major Achievement**: Advanced AST-based Code Transformation System
+**Duration**: ~4 hours total  
+**Major Achievement**: BoundaryML Integration with Structured LLM Operations
 
 ## 📋 What Was Completed
 
@@ -27,31 +27,67 @@
 - **Code Injection System**: before/after/replace/wrap patterns
 - **Configuration Management**: Dynamic variable updates through AST
 
-## 🚀 IMMEDIATE NEXT PRIORITY: Phase 2.4 - BoundaryML Integration
+### Phase 2.4 ✅ - BoundaryML Integration
+- **Structured LLM Operations**: 6 type-safe BAML functions for AI-powered analysis
+- **Enhanced Code Analysis**: LLM-powered component descriptions and pattern recognition
+- **Quality Assessment**: Multi-dimensional AI scoring with fallback systems
+- **Production Ready**: Graceful error handling and comprehensive testing
 
-### Step 1: Install BoundaryML
-```bash
-cd packages/discovery
-bun add @boundaryml/baml
+## 🚀 IMMEDIATE NEXT PRIORITY: Phase 3.1 - Socratic Dialogue Enhancement
+
+### Step 1: Migrate Socratic Dialogue to BAML
+**Primary Goal**: Replace static dialogue trees with LLM-generated questions
+
+**Files to Update**:
+- `packages/discovery/src/services/socratic-dialogue.ts` - Replace static trees with BAML calls
+- `packages/discovery/src/core/discovery-engine.ts` - Integrate adaptive dialogue
+- `packages/discovery/src/types/index.ts` - Add new dialogue types
+
+### Step 2: Implement Adaptive Question Generation
+```typescript
+// New SocraticDialogue implementation
+class SocraticDialogue {
+  async generateQuestions(
+    userQuery: string, 
+    category: string, 
+    previousResponses: string[], 
+    context: UserContext
+  ): Promise<DialogueQuestion[]> {
+    const result = await b.GenerateDialogueQuestions(userQuery, category, previousResponses, JSON.stringify(context));
+    return result.questions;
+  }
+}
 ```
 
-### Step 2: Create BAML Configuration
-Create `packages/discovery/baml_src/` directory with:
-- `main.baml` - Main configuration file
-- `generators.baml` - Code generation settings
-- `clients.baml` - LLM client configurations
+### Step 3: Enhanced Search Query Refinement
+```typescript
+// Add to DiscoveryEngine
+async refineSearchQuery(
+  originalQuery: string,
+  dialogueResponses: string[],
+  userContext: UserContext
+): Promise<SearchRequest> {
+  const refined = await b.RefineSearchQuery(originalQuery, dialogueResponses, JSON.stringify(userContext));
+  return this.buildSearchRequest(refined);
+}
+```
 
-### Step 3: Migrate from Anthropic SDK
-**Files to Update**:
-- `packages/discovery/src/services/socratic-dialogue.ts` - Replace Anthropic calls
-- `packages/discovery/src/services/code-analyzer.ts` - Add LLM-powered analysis
-- `packages/discovery/src/core/discovery-engine.ts` - Integrate BAML client
+### Step 4: GitHub Integration Enhancement
+**Goal**: Use LLM for better component quality assessment during indexing
 
-### Step 4: Implement LLM-Powered Features
-1. **Component Description Generation**: Use LLM to create better component descriptions
-2. **Intelligent Pattern Recognition**: AI-powered code pattern detection
-3. **Quality Assessment**: LLM-based component quality scoring
-4. **Adaptive Dialogue**: Context-aware question generation
+```typescript
+// Enhance GitHubIndexer
+async assessComponentQuality(component: Component): Promise<QualityAssessment> {
+  return await b.AssessComponentQuality(
+    component.name,
+    component.code,
+    component.hasTests,
+    component.hasDocumentation,
+    component.dependencies,
+    component.githubStars
+  );
+}
+```
 
 ## 📁 Key Files and Their Status
 

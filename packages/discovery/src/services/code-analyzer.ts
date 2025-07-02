@@ -72,10 +72,10 @@ export async function analyzeCode(content: string, filepath: string): Promise<Co
       adaptablePatterns: findAdaptablePatterns(ast, content),
     };
     
-    // Generate description and prompts
-    analysis.description = generateDescription(analysis);
+    // Generate description and prompts (async operations)
+    analysis.description = await generateDescription(analysis);
     analysis.primaryPrompt = generatePrimaryPrompt(analysis);
-    analysis.promptVariants = generatePromptVariants(analysis);
+    analysis.promptVariants = await generatePromptVariants(analysis);
     analysis.tags = generateTags(analysis);
     
     return analysis;
@@ -204,7 +204,10 @@ function extractDependencies(ast: any): string[] {
       const source = path.node.source.value;
       // Only external dependencies (not relative imports)
       if (!source.startsWith('.') && !source.startsWith('/')) {
-        deps.add(source.split('/')[0]); // Get package name
+        const packageName = source.split('/')[0];
+        if (packageName) {
+          deps.add(packageName); // Get package name
+        }
       }
     },
     CallExpression(path) {
@@ -213,7 +216,10 @@ function extractDependencies(ast: any): string[] {
           t.isStringLiteral(path.node.arguments[0])) {
         const source = path.node.arguments[0].value;
         if (!source.startsWith('.') && !source.startsWith('/')) {
-          deps.add(source.split('/')[0]);
+          const packageName = source.split('/')[0];
+          if (packageName) {
+            deps.add(packageName);
+          }
         }
       }
     },
@@ -238,8 +244,12 @@ function extractAPIs(ast: any): string[] {
         if (t.isStringLiteral(path.node.arguments[0])) {
           const url = path.node.arguments[0].value;
           if (url.startsWith('http')) {
-            const domain = new URL(url).hostname;
-            apis.add(domain);
+            try {
+              const domain = new URL(url).hostname;
+              apis.add(domain);
+            } catch {
+              // Invalid URL, skip
+            }
           }
         }
       }
@@ -247,10 +257,12 @@ function extractAPIs(ast: any): string[] {
     // Look for API configuration
     StringLiteral(path) {
       const value = path.node.value;
-      if (value.includes('api.') || value.includes('apis.')) {
+      if (value && (value.includes('api.') || value.includes('apis.'))) {
         try {
           const domain = new URL(value).hostname;
-          apis.add(domain);
+          if (domain) {
+            apis.add(domain);
+          }
         } catch {}
       }
     },
@@ -569,9 +581,37 @@ function detectErrorHandling(ast: any): string | undefined {
 }
 
 /**
- * Generate description from analysis
+ * Generate description from analysis using LLM
  */
-function generateDescription(analysis: CodeAnalysis): string {
+async function generateDescription(analysis: CodeAnalysis): Promise<string> {
+  try {
+    // Import BAML client
+    const { b } = await import('../../baml_client');
+    
+    // Get a code snippet for context (first 500 chars of normalized code)
+    const codeSnippet = analysis.normalizedCode.slice(0, 500);
+    
+    const result = await b.GenerateComponentDescription(
+      analysis.name,
+      analysis.language,
+      analysis.framework || null,
+      analysis.patterns,
+      analysis.dependencies,
+      analysis.apis,
+      codeSnippet
+    );
+    
+    return result.description;
+  } catch (error) {
+    logger.warn('Failed to generate LLM description, falling back to static generation:', error);
+    return generateStaticDescription(analysis);
+  }
+}
+
+/**
+ * Fallback static description generation
+ */
+function generateStaticDescription(analysis: CodeAnalysis): string {
   const parts: string[] = [];
   
   if (analysis.framework) {
@@ -612,9 +652,45 @@ function generatePrimaryPrompt(analysis: CodeAnalysis): string {
 }
 
 /**
- * Generate prompt variants
+ * Generate prompt variants using LLM-enhanced analysis
  */
-function generatePromptVariants(analysis: CodeAnalysis): string[] {
+async function generatePromptVariants(analysis: CodeAnalysis): Promise<string[]> {
+  try {
+    // Import BAML client
+    const { b } = await import('../../baml_client');
+    
+    const patternAnalysis = await b.AnalyzeCodePatterns(
+      analysis.normalizedCode,
+      analysis.language,
+      analysis.framework || null
+    );
+    
+    // Extract alternative descriptions from pattern analysis
+    const variants: string[] = [];
+    
+    // Add recommendations as variants
+    patternAnalysis.recommendations.forEach(rec => {
+      if (rec.length > 10 && rec.length < 100) {
+        variants.push(rec);
+      }
+    });
+    
+    // Add pattern-based variants
+    patternAnalysis.design_patterns.forEach(pattern => {
+      variants.push(`${pattern} implementation`);
+    });
+    
+    return variants.length > 0 ? variants : generateStaticPromptVariants(analysis);
+  } catch (error) {
+    logger.warn('Failed to generate LLM prompt variants, falling back to static generation:', error);
+    return generateStaticPromptVariants(analysis);
+  }
+}
+
+/**
+ * Fallback static prompt variants generation
+ */
+function generateStaticPromptVariants(analysis: CodeAnalysis): string[] {
   const variants: string[] = [];
   
   // Different ways to describe the same component
