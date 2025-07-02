@@ -9,9 +9,11 @@ import { z } from 'zod';
 
 // Base schemas for JSON serializability
 export const JSONPrimitive = z.union([z.string(), z.number(), z.boolean(), z.null()]);
-export const JSONValue: z.ZodType<unknown> = z.lazy(() =>
-  z.union([JSONPrimitive, z.array(JSONValue), z.record(JSONValue)])
-);
+export const JSONValue = z.union([
+  JSONPrimitive,
+  z.array(z.union([z.string(), z.number(), z.boolean(), z.null()])),
+  z.record(z.union([z.string(), z.number(), z.boolean(), z.null()]))
+]);
 
 /**
  * Component metadata - what we store about each indexed component
@@ -112,11 +114,11 @@ export const UserContextSchema = z.object({
   project: z.object({
     language: z.string(),
     framework: z.string().optional(),
-    packageManager: z.enum(['npm', 'bun', 'yarn', 'pnpm']).optional(),
+    packageManager: z.union([z.literal('npm'), z.literal('bun'), z.literal('yarn'), z.literal('pnpm')]).optional(),
     conventions: z.object({
-      naming: z.enum(['camelCase', 'snake_case', 'kebab-case', 'PascalCase']),
-      imports: z.enum(['named', 'default', 'namespace']),
-      exports: z.enum(['named', 'default', 'commonjs']),
+      naming: z.union([z.literal('camelCase'), z.literal('snake_case'), z.literal('kebab-case'), z.literal('PascalCase')]),
+      imports: z.union([z.literal('named'), z.literal('default'), z.literal('namespace')]),
+      exports: z.union([z.literal('named'), z.literal('default'), z.literal('commonjs')]),
     }),
   }),
   
@@ -129,9 +131,9 @@ export const UserContextSchema = z.object({
   })).optional(),
   
   preferences: z.object({
-    style: z.enum(['functional', 'oop', 'mixed']).optional(),
-    errorHandling: z.enum(['exceptions', 'result-types', 'callbacks']).optional(),
-    asyncPattern: z.enum(['promises', 'async-await', 'callbacks']).optional(),
+    style: z.union([z.literal('functional'), z.literal('oop'), z.literal('mixed')]).optional(),
+    errorHandling: z.union([z.literal('exceptions'), z.literal('result-types'), z.literal('callbacks')]).optional(),
+    asyncPattern: z.union([z.literal('promises'), z.literal('async-await'), z.literal('callbacks')]).optional(),
   }),
 });
 

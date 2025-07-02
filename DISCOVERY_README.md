@@ -32,15 +32,33 @@ packages/
 ## Quick Start
 
 ```bash
-# Run the quick start script
-bun run quickstart.ts
-
-# Or manually:
+# Install dependencies
 bun install
+
+# Run the discovery engine demo
+cd packages/discovery
+bun run src/simple-cli.ts
+
+# Or run development servers (work in progress)
 bun run dev
 ```
 
-Then visit http://localhost:3000
+## Current Implementation Status
+
+✅ **Completed:**
+- Core discovery engine with semantic search
+- Component indexing and caching
+- Vector embedding-based similarity matching
+- Pattern-based component matching
+- Sample component library (auth, payments)
+- CLI demonstration interface
+
+🔧 **In Progress:**
+- GitHub repository indexing
+- Code adaptation engine
+- Socratic dialogue system
+- Web interface integration
+- Production embedding models
 
 ## Key Features
 

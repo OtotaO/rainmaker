@@ -31,11 +31,12 @@ bun test
 ## Usage
 
 ```bash
-# Run the discovery CLI
-bun run rainmaker-discovery
+# Run the discovery engine demo
+cd packages/discovery
+bun run src/simple-cli.ts
 
-# Or use directly with npx
-npx @f8n/rainmaker-discovery
+# Or run the main CLI (work in progress)
+bun run rainmaker-discovery
 ```
 
 ## Development
