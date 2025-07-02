@@ -122,7 +122,7 @@ export class EmbeddingService {
           encoding_format: 'float',
         });
         
-        const batchResults = response.data.map((data, index) => ({
+        const batchResults = response.data.map((data) => ({
           embedding: data.embedding,
           tokens: Math.round((response.usage?.total_tokens || 0) / batch.length), // Approximate tokens per text
           model: this.config.model,
@@ -283,9 +283,11 @@ export class EmbeddingService {
     let magnitudeB = 0;
     
     for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      magnitudeA += a[i] * a[i];
-      magnitudeB += b[i] * b[i];
+      const aVal = a[i] || 0;
+      const bVal = b[i] || 0;
+      dotProduct += aVal * bVal;
+      magnitudeA += aVal * aVal;
+      magnitudeB += bVal * bVal;
     }
     
     magnitudeA = Math.sqrt(magnitudeA);

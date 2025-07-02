@@ -13,12 +13,11 @@ import { Octokit } from '@octokit/rest';
 import type { 
   Component, 
   ComponentMetadata,
-  SearchRequest, 
   UserContext, 
   AdaptedComponent,
   AdaptationPlan 
 } from '../types';
-import { ComponentSchema, UserContextSchema } from '../types';
+import { ComponentSchema } from '../types';
 import { analyzeCode } from '../services/code-analyzer';
 import { generateEmbedding, cosineSimilarity } from '../services/embedding';
 import { GitHubIndexer } from '../services/github-indexer';
