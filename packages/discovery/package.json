@@ -20,6 +20,7 @@
     "@ts-rest/core": "^3.30.0",
     "@ts-rest/express": "^3.30.0",
     "@typescript-eslint/parser": "^7.3.0",
+    "openai": "^4.53.2",
     "prettier": "^3.2.5",
     "uuid": "^9.0.1",
     "zod": "^3.22.0"
@@ -29,6 +30,6 @@
     "@types/babel__traverse": "^7.20.5",
     "@types/bun": "^1.0.0",
     "@types/uuid": "^9.0.8",
-    "typescript": "^5.4.0"
+    "typescript": "5.8.2"
   }
 }

@@ -32,9 +32,9 @@
     "@types/uuid": "10.0.0",
     "concurrently": "^8.2.2",
     "ts-node": "10.9.2",
-    "typescript": "5.5.3"
+    "typescript": "5.8.2"
   },
-  "packageManager": "bun@1.1.38",
+  "packageManager": "bun@1.2.12",
   "dependencies": {
     "@ts-rest/core": "3.52.0",
     "glob": "11.0.0",

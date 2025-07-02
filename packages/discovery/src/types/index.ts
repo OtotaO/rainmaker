@@ -93,7 +93,12 @@ export const ComponentSchema = z.object({
     injectionPoints: z.array(z.object({
       id: z.string(),
       description: z.string(),
-      type: z.enum(['before', 'after', 'replace', 'wrap']),
+      type: z.union([
+        z.literal('before'),
+        z.literal('after'),
+        z.literal('replace'),
+        z.literal('wrap')
+      ]),
       location: z.string().describe('AST path or line range'),
     })).describe('Where custom code can be injected'),
     
@@ -145,7 +150,12 @@ export type UserContext = z.infer<typeof UserContextSchema>;
 export const DialogueNodeSchema = z.object({
   id: z.string(),
   question: z.string().describe('Question to ask the user'),
-  type: z.enum(['single-choice', 'multi-choice', 'text', 'confirm']),
+  type: z.union([
+    z.literal('single-choice'),
+    z.literal('multi-choice'),
+    z.literal('text'),
+    z.literal('confirm')
+  ]),
   options: z.array(z.object({
     value: z.string(),
     label: z.string(),
@@ -206,7 +216,11 @@ export const AdaptationPlanSchema = z.object({
       type: z.literal('replace-import'),
       from: z.string(),
       to: z.string(),
-      importStyle: z.enum(['named', 'default', 'namespace']).optional(),
+      importStyle: z.union([
+        z.literal('named'),
+        z.literal('default'),
+        z.literal('namespace')
+      ]).optional(),
     }),
     
     // Inject custom code
@@ -214,7 +228,12 @@ export const AdaptationPlanSchema = z.object({
       type: z.literal('inject'),
       point: z.string().describe('Injection point ID'),
       code: z.string(),
-      position: z.enum(['before', 'after', 'replace', 'wrap']),
+      position: z.union([
+        z.literal('before'),
+        z.literal('after'),
+        z.literal('replace'),
+        z.literal('wrap')
+      ]),
     }),
     
     // Change patterns (like error handling)

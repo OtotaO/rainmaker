@@ -8,7 +8,7 @@
 import { writeFile, readFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { generateEmbedding, cosineSimilarity } from './services/embedding';
+import { generateEmbedding, cosineSimilarity } from './services/embedding-service';
 
 // Simple types without Zod
 interface Component {
