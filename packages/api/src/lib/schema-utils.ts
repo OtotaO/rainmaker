@@ -28,9 +28,17 @@ export function validateAndSanitize<T extends z.ZodRawShape>(
   const result: Partial<z.infer<z.ZodObject<T>>> = {};
   const schemaEntries = Object.entries(schema.shape);
 
+  // Type guard to ensure data is an object
+  if (!data || typeof data !== 'object') {
+    logger.warn('validateAndSanitize received non-object data', { data });
+    return result;
+  }
+
+  const dataRecord = data as Record<string, unknown>;
+
   for (const [key, validator] of schemaEntries) {
     try {
-      const value = validator.parse((data as any)[key]);
+      const value = validator.parse(dataRecord[key]);
       result[key as keyof z.infer<z.ZodObject<T>>] = value;
     } catch (error) {
       logger.warn(`Validation failed for field "${key}"`, { error });

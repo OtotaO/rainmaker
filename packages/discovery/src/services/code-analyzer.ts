@@ -9,7 +9,6 @@ import * as parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import generate from '@babel/generator';
 import * as t from '@babel/types';
-import { parse as parseTypeScript } from '@typescript-eslint/parser';
 import { logger } from '../utils/logger';
 
 export interface CodeAnalysis {
@@ -52,11 +51,12 @@ export async function analyzeCode(content: string, filepath: string): Promise<Co
     const ast = parseCode(content, language);
     if (!ast) return null;
     
+    const framework = detectFramework(content, ast);
     const analysis: CodeAnalysis = {
       name: extractComponentName(ast, filepath),
       description: '',
       language,
-      framework: detectFramework(content, ast),
+      ...(framework && { framework }),
       dependencies: extractDependencies(ast),
       apis: extractAPIs(ast),
       patterns: detectPatterns(ast, content),
@@ -333,7 +333,6 @@ function normalizeCode(ast: any, language: string): string {
       retainLines: false,
       compact: false,
       concise: false,
-      quotes: 'single',
     });
     return code;
   }
@@ -423,18 +422,21 @@ function findInjectionPoints(ast: any): any[] {
         });
       }
     },
-    // Comments marked as injection points
-    Comment(path) {
-      if (path.node.value.includes('@inject') || path.node.value.includes('INJECT')) {
+  });
+  
+  // Check for comments manually since Comment visitor is no longer supported
+  if (ast.comments) {
+    ast.comments.forEach((comment: any, index: number) => {
+      if (comment.value.includes('@inject') || comment.value.includes('INJECT')) {
         points.push({
           id: `injection-${++pointId}`,
-          description: path.node.value.replace(/@inject|INJECT/g, '').trim(),
+          description: comment.value.replace(/@inject|INJECT/g, '').trim(),
           type: 'replace',
-          location: `comment:${path.node.loc?.start.line}`,
+          location: `comment:${comment.loc?.start.line || index}`,
         });
       }
-    },
-  });
+    });
+  }
   
   return points;
 }

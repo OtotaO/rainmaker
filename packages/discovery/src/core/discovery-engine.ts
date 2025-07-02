@@ -21,6 +21,7 @@ import type {
 import { ComponentSchema, UserContextSchema } from '../types';
 import { analyzeCode } from '../services/code-analyzer';
 import { generateEmbedding, cosineSimilarity } from '../services/embedding';
+import { GitHubIndexer } from '../services/github-indexer';
 import { logger } from '../utils/logger';
 
 /**
@@ -171,6 +172,59 @@ export class DiscoveryEngine {
     return adapted;
   }
   
+  /**
+   * Index components from GitHub repositories
+   */
+  async indexFromGitHub(categories: string[] = ['auth', 'payments'], options: {
+    minStars?: number;
+    limit?: number;
+  } = {}): Promise<void> {
+    if (!this.config.githubToken) {
+      logger.warn('No GitHub token provided, falling back to sample components');
+      await this.indexSampleComponents();
+      return;
+    }
+
+    const { minStars = 100, limit = 50 } = options;
+    logger.info('Starting GitHub indexing...', { categories, minStars, limit });
+
+    const indexer = new GitHubIndexer(this.config.githubToken);
+    
+    for (const category of categories) {
+      try {
+        logger.info(`Indexing category: ${category}`);
+        
+        const components = await indexer.indexCategory(category, {
+          minStars,
+          limit: Math.floor(limit / categories.length),
+        });
+
+        // Add components to our collection
+        for (const component of components) {
+          this.components.set(component.metadata.id, component);
+          
+          // Generate and store embedding
+          const embeddingText = `${component.metadata.name} ${component.metadata.description} ${component.metadata.category} ${component.metadata.technical.patterns.join(' ')}`;
+          const embedding = await generateEmbedding(embeddingText);
+          this.embeddings.push({
+            id: component.metadata.id,
+            embedding,
+          });
+          
+          logger.info(`Indexed GitHub component: ${component.metadata.name} from ${component.metadata.source.repo}`);
+        }
+        
+        logger.info(`Completed indexing ${components.length} components for category: ${category}`);
+      } catch (error) {
+        logger.error(`Failed to index category ${category}:`, error);
+      }
+    }
+
+    // Save to cache
+    await this.saveCachedComponents();
+    logger.info(`GitHub indexing complete. Total components: ${this.components.size}`);
+  }
+
   /**
    * Index sample components for demonstration
    */

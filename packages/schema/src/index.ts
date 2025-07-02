@@ -1,12 +1,13 @@
 import { generatePrismaModels } from './generators/prisma/generator';
 import { z } from './zod';
+import type { ZodObject, ZodRawShape } from './zod-base';
 
 /**
  * Generates a Prisma schema from a map of Zod schemas.
  * @param schemaMap A map of model names to their corresponding Zod schemas
  * @returns The generated Prisma schema as a string
  */
-export function generateSchema(schemaMap: Map<string, z.ZodType>): string {
+export function generateSchema(schemaMap: Map<string, ZodObject<ZodRawShape>>): string {
   const baseSchema = `
 datasource db {
   provider = "postgresql"

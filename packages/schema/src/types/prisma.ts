@@ -1,8 +1,8 @@
-import type { ZodType } from '../zod-base';
+import type { ZodType, ZodObject, ZodRawShape } from '../zod-base';
 import { LogLevel } from '../logger';
 
 // Type definitions
-type SerializableJson = ZodType;
+type SerializableJson = ZodObject<ZodRawShape>;
 type DeserializedJson = unknown;
 
 interface PrismaFieldMetadata {
@@ -90,7 +90,7 @@ interface PrismaSchema {
   models: PrismaModel[];
 }
 
-type SchemaMap = Record<string, ZodType>;
+type SchemaMap = Record<string, ZodObject<ZodRawShape>>;
 
 // Export for ESM
 export {
@@ -110,5 +110,3 @@ export {
   PrismaSchema,
   SchemaMap,
 };
-
- 

@@ -79,9 +79,9 @@ function validateFieldType(field: z.ZodType, fieldName: string, model?: string):
   );
 }
 
-export function validateRelations(
-  schema: zRaw.ZodObject<zRaw.ZodRawShape>,
-  schemaMap: Map<string, zRaw.ZodSchema>,
+export function validateRelations<T extends zRaw.ZodRawShape>(
+  schema: zRaw.ZodObject<T>,
+  schemaMap: Map<string, zRaw.ZodObject<zRaw.ZodRawShape>>,
   model?: string
 ): void {
   const shape = schema.shape;
@@ -115,4 +115,4 @@ export function validateRelations(
       }
     }
   }
-} 
+}
