@@ -1,225 +1,170 @@
-# Next Session Handoff - Phase 3.1 Socratic Dialogue Enhancement
+# Next Session Handoff - Phase 3.1 Continuation
 
-## 🎯 Current Status: Phase 2.4 COMPLETE ✅
+## 🎯 Current Status: Phase 3.1 ~40% Complete
 
-**Date**: January 2025  
-**Duration**: ~4 hours total  
-**Major Achievement**: BoundaryML Integration with Structured LLM Operations
+**Last Updated**: January 2025  
+**Session Focus**: Enhanced Socratic Dialogue Implementation ✅
 
-## 📋 What Was Completed
+## 📋 What Was Just Completed
 
-### Phase 2.1 ✅ - Type System Cleanup
-- Eliminated all `any` types across the codebase
-- Fixed ZodObject generic constraints
-- Achieved 95% type coverage with zero TypeScript errors
+### ✅ Socratic Dialogue Enhancement (COMPLETE)
+- Created `packages/discovery/src/services/socratic-dialogue-enhanced.ts`
+- Integrated BAML `GenerateDialogueQuestions` function
+- Updated discovery service for async dialogue methods
+- Created test suite in `test-socratic-dialogue.ts`
+- Fixed all TypeScript compatibility issues
 
-### Phase 2.2 ✅ - GitHub Indexing Implementation  
-- Real repository crawling with GitHubIndexer service
-- Category-specific search (auth, payments, database, API)
-- Quality filtering by stars, tests, documentation, license
-- GitHub CLI demo with graceful fallback to sample components
+**Key Achievement**: The system now generates adaptive, context-aware questions using LLM instead of static dialogue trees, with graceful fallback to static trees when LLM is unavailable.
 
-### Phase 2.3 ✅ - Code Adaptation Engine Enhancement
-- **AST-based Transformations**: Full Babel parser/generator integration
-- **Error Handling Conversion**: try-catch ↔ promises ↔ async/await ↔ Result types
-- **Naming Convention System**: camelCase ↔ snake_case ↔ kebab-case ↔ PascalCase
-- **Import/Export Transformation**: default ↔ named ↔ namespace imports
-- **Code Injection System**: before/after/replace/wrap patterns
-- **Configuration Management**: Dynamic variable updates through AST
+## 🔄 What Remains in Phase 3.1
 
-### Phase 2.4 ✅ - BoundaryML Integration
-- **Structured LLM Operations**: 6 type-safe BAML functions for AI-powered analysis
-- **Enhanced Code Analysis**: LLM-powered component descriptions and pattern recognition
-- **Quality Assessment**: Multi-dimensional AI scoring with fallback systems
-- **Production Ready**: Graceful error handling and comprehensive testing
+### 1. GitHub Integration Enhancement (Priority: HIGH)
+**File**: `packages/discovery/src/services/github-indexer.ts`
+**Task**: Integrate `AssessComponentQuality` BAML function
 
-## 🚀 IMMEDIATE NEXT PRIORITY: Phase 3.1 - Socratic Dialogue Enhancement
-
-### Step 1: Migrate Socratic Dialogue to BAML
-**Primary Goal**: Replace static dialogue trees with LLM-generated questions
-
-**Files to Update**:
-- `packages/discovery/src/services/socratic-dialogue.ts` - Replace static trees with BAML calls
-- `packages/discovery/src/core/discovery-engine.ts` - Integrate adaptive dialogue
-- `packages/discovery/src/types/index.ts` - Add new dialogue types
-
-### Step 2: Implement Adaptive Question Generation
 ```typescript
-// New SocraticDialogue implementation
-class SocraticDialogue {
-  async generateQuestions(
-    userQuery: string, 
-    category: string, 
-    previousResponses: string[], 
-    context: UserContext
-  ): Promise<DialogueQuestion[]> {
-    const result = await b.GenerateDialogueQuestions(userQuery, category, previousResponses, JSON.stringify(context));
-    return result.questions;
+// Add to analyzeRepository method
+const qualityAssessment = await b.AssessComponentQuality(
+  component.name,
+  component.code,
+  hasTests,
+  hasDocumentation,
+  dependencies,
+  stars
+);
+
+// Update component metadata with AI scores
+component.metadata.quality = {
+  ...component.metadata.quality,
+  aiScores: {
+    codeQuality: qualityAssessment.code_quality_score,
+    reliability: qualityAssessment.reliability_score,
+    reusability: qualityAssessment.reusability_score,
+    documentation: qualityAssessment.documentation_score,
+    testing: qualityAssessment.testing_score,
+    overall: qualityAssessment.overall_score
+  },
+  aiRecommendations: qualityAssessment.recommendations
+};
+```
+
+### 2. Search Query Refinement (Priority: HIGH)
+**File**: `packages/discovery/src/services/discovery-service.ts`
+**Task**: Add query refinement after dialogue completion
+
+```typescript
+// Add new method to DiscoveryService
+async refineSearchQuery(
+  originalQuery: string,
+  dialogueResponses: string[],
+  context: UserContext
+): Promise<SearchRequest> {
+  const refinedQuery = await b.RefineSearchQuery(
+    originalQuery,
+    dialogueResponses,
+    JSON.stringify(context)
+  );
+  
+  // Use refined query to enhance search
+  return {
+    query: refinedQuery.refined_query,
+    // ... apply filters and boosts from refinedQuery
+  };
+}
+```
+
+### 3. Code Transformation Suggestions (Priority: MEDIUM)
+**File**: `packages/discovery/src/services/adaptation-engine.ts`
+**Task**: Integrate `SuggestCodeTransformations` for smarter adaptations
+
+```typescript
+// Add to adapt method
+const suggestions = await b.SuggestCodeTransformations(
+  component.code,
+  targetPatterns,
+  context.project.framework,
+  constraints
+);
+
+// Apply AI-suggested transformations
+for (const suggestion of suggestions.structural_changes) {
+  if (suggestion.priority === 'high') {
+    // Apply transformation
   }
 }
 ```
 
-### Step 3: Enhanced Search Query Refinement
-```typescript
-// Add to DiscoveryEngine
-async refineSearchQuery(
-  originalQuery: string,
-  dialogueResponses: string[],
-  userContext: UserContext
-): Promise<SearchRequest> {
-  const refined = await b.RefineSearchQuery(originalQuery, dialogueResponses, JSON.stringify(userContext));
-  return this.buildSearchRequest(refined);
-}
-```
+## 🧪 Testing Instructions
 
-### Step 4: GitHub Integration Enhancement
-**Goal**: Use LLM for better component quality assessment during indexing
-
-```typescript
-// Enhance GitHubIndexer
-async assessComponentQuality(component: Component): Promise<QualityAssessment> {
-  return await b.AssessComponentQuality(
-    component.name,
-    component.code,
-    component.hasTests,
-    component.hasDocumentation,
-    component.dependencies,
-    component.githubStars
-  );
-}
-```
-
-## 📁 Key Files and Their Status
-
-### Core Engine Files (All Working ✅)
-- `packages/discovery/src/core/discovery-engine.ts` - Main orchestrator with GitHub integration
-- `packages/discovery/src/services/embedding-service.ts` - Production OpenAI embeddings
-- `packages/discovery/src/services/code-analyzer.ts` - Fixed Babel issues, ready for LLM enhancement
-- `packages/discovery/src/services/adaptation-engine.ts` - **NEWLY ENHANCED** with full AST transformations
-- `packages/discovery/src/services/github-indexer.ts` - Production GitHub crawling
-
-### Demo Files (Both Working ✅)
-- `packages/discovery/src/simple-cli.ts` - Basic search demo
-- `packages/discovery/src/github-cli.ts` - GitHub indexing demo
-
-### Type System (All Fixed ✅)
-- `packages/discovery/src/types/index.ts` - Core type definitions
-- `packages/schema/src/utils/validation.ts` - Improved generic constraints
-- `packages/schema/src/types/prisma.ts` - Specific ZodObject types
-
-## 🧪 Testing Commands
-
-### Verify Current Functionality
+### Test Current Implementation
 ```bash
-cd packages/discovery
+# Test enhanced Socratic dialogue (no API key needed - uses fallback)
+cd packages/discovery && bun run src/test-socratic-dialogue.ts
 
-# Test basic search functionality
-bun run src/simple-cli.ts
-
-# Test GitHub integration (with token)
-export GITHUB_TOKEN=your_token_here
-bun run src/github-cli.ts
-
-# Check for any TypeScript issues
-bun run typecheck
+# Test with real LLM (requires OPENAI_API_KEY)
+export OPENAI_API_KEY=your_key_here
+cd packages/discovery && bun run src/test-socratic-dialogue.ts
 ```
 
-### Expected Output
-- ✅ Semantic search working with OpenAI embeddings
-- ✅ Component indexing and similarity scoring
-- ✅ Pattern-based matching (auth, payments, etc.)
-- ✅ GitHub repository crawling (when token provided)
-- ✅ Zero TypeScript errors
+### Verify Everything Still Works
+```bash
+# Run the simple CLI demo
+cd packages/discovery && bun run src/simple-cli.ts
 
-## 🔧 BoundaryML Integration Plan
+# Run BAML tests
+cd packages/discovery && bun run src/test-baml.ts
+```
 
-### Research Phase (30 minutes)
-1. **Study BoundaryML Documentation**: https://docs.boundaryml.com/
-2. **Review BAML Syntax**: Understand configuration format
-3. **Check Integration Examples**: Look for TypeScript/Node.js examples
+## 💡 Implementation Tips
 
-### Implementation Phase (2-3 hours)
-1. **Install and Configure** (30 minutes):
-   - Add BoundaryML package
-   - Create BAML configuration files
-   - Set up LLM client connections
+### For GitHub Integration
+1. Add graceful fallback if LLM unavailable
+2. Cache quality assessments to avoid repeated API calls
+3. Consider batch processing for multiple components
+4. Add quality threshold filtering (e.g., overall_score > 7)
 
-2. **Migrate Existing LLM Calls** (1 hour):
-   - Replace Anthropic SDK imports
-   - Update function signatures
-   - Test basic LLM connectivity
+### For Search Refinement
+1. Preserve original query for fallback
+2. Use alternative queries for query expansion
+3. Apply boost factors intelligently
+4. Log refinement results for debugging
 
-3. **Enhance with New Features** (1-2 hours):
-   - Add component description generation
-   - Implement intelligent pattern recognition
-   - Create quality assessment functions
-   - Build adaptive dialogue flows
+### For Code Transformations
+1. Start with high-priority suggestions only
+2. Validate transformations with AST parsing
+3. Show suggestions to user before applying
+4. Track which transformations are most useful
 
-### Testing Phase (30 minutes)
-1. **Validate Integration**: Ensure all existing functionality still works
-2. **Test New Features**: Verify LLM-powered enhancements
-3. **Performance Benchmark**: Compare with current implementation
+## 🚨 Important Notes
 
-## 🎯 Success Criteria for Phase 2.4
+1. **BAML Client**: Already initialized in enhanced dialogue - reuse pattern
+2. **Async Methods**: Remember to update callers to handle promises
+3. **Error Handling**: Always provide fallbacks for LLM failures
+4. **Testing**: Test both with and without API keys
+5. **Performance**: Consider caching LLM responses
 
-### Must Have ✅
-- [ ] BoundaryML successfully replaces Anthropic SDK
-- [ ] All existing functionality continues to work
-- [ ] LLM-powered component description generation
-- [ ] Zero breaking changes to existing APIs
+## 📊 Success Criteria
 
-### Should Have 🎯
-- [ ] Intelligent pattern recognition using LLM
-- [ ] Component quality assessment with AI
-- [ ] Adaptive dialogue flows
-- [ ] Performance equal to or better than current implementation
+Phase 3.1 will be complete when:
+- ✅ Socratic dialogue uses LLM for adaptive questions
+- 🔄 GitHub indexer uses LLM for quality assessment
+- 🔄 Search queries are refined using LLM understanding
+- 🔄 Code adaptations use LLM suggestions
 
-### Nice to Have 🌟
-- [ ] Advanced code transformation suggestions
-- [ ] Context-aware requirement gathering
-- [ ] Multi-model LLM support
-- [ ] Caching for LLM responses
+## 🎯 Estimated Time to Complete
 
-## 🚨 Potential Issues to Watch
+- GitHub Integration: ~1-2 hours
+- Search Refinement: ~1 hour  
+- Code Transformations: ~2 hours
+- Testing & Polish: ~1 hour
 
-### Known Challenges
-1. **API Key Management**: Ensure proper environment variable handling
-2. **Rate Limiting**: Implement proper throttling for LLM calls
-3. **Error Handling**: Graceful fallback when LLM is unavailable
-4. **Performance**: Monitor latency impact of LLM integration
+**Total**: ~5-6 hours to complete Phase 3.1
 
-### Debugging Tips
-1. **Start Simple**: Begin with basic LLM connectivity before complex features
-2. **Test Incrementally**: Validate each migration step before proceeding
-3. **Keep Fallbacks**: Maintain existing functionality during transition
-4. **Monitor Logs**: Use existing logger for debugging LLM interactions
+## 🔗 Key Files to Review
 
-## 📚 Resources
+1. `packages/discovery/baml_src/main.baml` - BAML function definitions
+2. `packages/discovery/src/services/socratic-dialogue-enhanced.ts` - Reference implementation
+3. `packages/discovery/src/test-baml.ts` - How to call BAML functions
+4. `PHASE_3_1_PROGRESS.md` - Detailed progress tracking
 
-### Documentation
-- **BoundaryML Docs**: https://docs.boundaryml.com/
-- **BAML Language Guide**: https://docs.boundaryml.com/docs/baml/
-- **TypeScript Integration**: https://docs.boundaryml.com/docs/clients/typescript/
-
-### Current Implementation References
-- **Socratic Dialogue**: `packages/discovery/src/services/socratic-dialogue.ts`
-- **Code Analyzer**: `packages/discovery/src/services/code-analyzer.ts`
-- **Discovery Engine**: `packages/discovery/src/core/discovery-engine.ts`
-
-## 🏁 After Phase 2.4 Completion
-
-### Next Major Milestone: Phase 3 - User Experience
-1. **React Discovery UI**: Component search and preview interface
-2. **Socratic Dialogue Interface**: Interactive requirement refinement
-3. **Component Comparison**: Side-by-side component analysis
-4. **Adaptation Configuration**: Visual code transformation settings
-
-### Estimated Timeline
-- **Phase 2.4**: 1-2 sessions (4-6 hours)
-- **Phase 3**: 3-4 sessions (8-12 hours)
-- **Phase 4**: 2-3 sessions (6-8 hours)
-- **Total to Production**: 2-3 weeks
-
----
-
-**🎯 IMMEDIATE ACTION**: Start with BoundaryML installation and basic configuration. The foundation is solid, and the next step is to enhance intelligence with proper LLM integration.
+Good luck! The enhanced Socratic dialogue sets a great pattern for the remaining integrations. 🚀

@@ -59,7 +59,7 @@ export class DiscoveryEngine {
     }
     
     // Ensure data directory exists
-    this.ensureDataDir();
+    void this.ensureDataDir();
   }
   
   /**

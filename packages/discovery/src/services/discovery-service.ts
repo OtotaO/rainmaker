@@ -14,7 +14,7 @@ import type {
   DialogueNode 
 } from '../types';
 import { GitHubIndexer } from './github-indexer';
-import { SocraticDialogue } from './socratic-dialogue';
+import { SocraticDialogue } from './socratic-dialogue-enhanced';
 import { AdaptationEngine } from './adaptation-engine';
 import { generateEmbedding, findSimilar } from './embedding';
 import { logger } from '../utils/logger';
@@ -53,21 +53,19 @@ export class DiscoveryService {
     logger.info(`Starting discovery for query: ${query}`);
     
     // Step 1: Suggest categories
-    const suggestions = SocraticDialogue.suggestCategories(query);
+    const suggestions = await SocraticDialogue.suggestCategories(query);
     
     return {
       suggestions,
-      dialogue: undefined,
-      components: undefined,
     };
   }
   
   /**
    * Start Socratic dialogue for a category
    */
-  startDialogue(category: string): DialogueNode | null {
+  async startDialogue(category: string, query: string, context: UserContext): Promise<DialogueNode | null> {
     const dialogue = new SocraticDialogue();
-    return dialogue.startDialogue(category);
+    return await dialogue.startDialogue(category, query, context);
   }
   
   /**
@@ -86,7 +84,7 @@ export class DiscoveryService {
     // Restore dialogue state
     Object.assign(dialogue, dialogueState);
     
-    const nextQuestion = dialogue.processResponse(nodeId, response);
+    const nextQuestion = await dialogue.processResponse(nodeId, response);
     
     if (!nextQuestion) {
       // Dialogue complete - build search request
@@ -199,7 +197,7 @@ export class DiscoveryService {
     context: UserContext,
     customizations?: any
   ): Promise<any> {
-    const plan = {
+    const plan: any = {
       component: component.metadata.id,
       transformations: [],
       additions: [],
