@@ -19,6 +19,7 @@ import { aiAssistanceRouter, createAiAssistanceRouter } from './routes/ai-assist
 import { githubRouter, createGithubRouter } from './routes/github';
 import { configRouter, createConfigRouter } from './routes/config';
 import { ConfigSettingService } from './config/configSettingService';
+import discoveryRouter from './routes/discovery';
 
 const app = express();
 const s = initServer();
@@ -59,6 +60,9 @@ try {
 
   app.use(express.json());
   app.use(cors());
+
+  // Mount discovery routes
+  app.use('/api/discovery', discoveryRouter);
 
   // Test Anthropic configuration
   app.get('/api/test-anthropic', async (req, res) => {

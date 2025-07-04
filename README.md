@@ -43,16 +43,18 @@ Rainmaker Discovery helps you find, understand, and adapt existing code solution
 
 ## 🚀 Quick Start
 
+See our [**Quick Start Guide**](./QUICKSTART.md) for detailed setup instructions!
+
 ```bash
-# Install dependencies
-bun install
+# Quick setup (after cloning)
+./scripts/setup-env.sh  # Interactive environment setup
+bun install            # Install dependencies
+cd packages/discovery && bun run src/simple-cli.ts  # Test it works!
+```
 
-# Test the discovery engine (recommended)
-cd packages/discovery
-bun run src/simple-cli.ts
-
-# Run development servers (full stack)
-bun run dev:all
+For the full experience with all features:
+```bash
+bun run dev:all  # Start all servers
 ```
 
 ## 🧪 Demo the Semantic Search
