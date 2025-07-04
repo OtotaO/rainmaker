@@ -7,32 +7,64 @@
 
 import { z } from 'zod';
 import crypto from 'crypto';
-import type { DialogueNode, SearchRequest, UserContext } from '../types';
-import { DialogueNodeSchema } from '../types';
+import type { DialogueNode, SearchRequest, UserContext, SocraticResponse, DialogueState } from '../types'; // Add DialogueState
+import { DialogueNodeSchema, SocraticResponseSchema, DialogueStateSchema } from '../types'; // Add DialogueStateSchema
+import type { BAMLClient, BamlDialogueQuestion } from '../types/baml';
 import { logger } from '../utils/logger';
 
 // Import the original static dialogue for fallback
 import { SocraticDialogue as StaticSocraticDialogue } from './socratic-dialogue';
 
-// Type for BAML client (will be dynamically imported)
-type BAMLClient = any;
-
 /**
  * Enhanced Socratic Dialogue with LLM-powered adaptive questioning
  */
 export class SocraticDialogue {
-  private responses: Map<string, any> = new Map();
+  private responses: Map<string, SocraticResponse> = new Map();
   private currentPath: string[] = [];
   private bamlClient: BAMLClient | null = null;
   private staticFallback: StaticSocraticDialogue;
   private generatedNodes: Map<string, DialogueNode> = new Map();
-  private category: string = '';
-  private originalQuery: string = '';
-  private userContext: UserContext | null = null;
   
-  constructor() {
+  // Private backing fields for properties exposed via getters
+  private _category: string = '';
+  private _originalQuery: string = '';
+  private _userContext: UserContext | null = null;
+  
+  // Public getters for state needed by other services
+  public get originalQuery(): string {
+    return this._originalQuery;
+  }
+
+  public get category(): string {
+    return this._category;
+  }
+
+  public get userContext(): UserContext | null {
+    return this._userContext;
+  }
+
+  constructor(initialState?: DialogueState) { // Allow optional initial state
     this.staticFallback = new StaticSocraticDialogue();
-    this.initializeBAML();
+    if (initialState) {
+      this.restoreState(initialState);
+    } else {
+      this.initializeBAML();
+    }
+  }
+
+  /**
+   * Restores the internal state of the SocraticDialogue from a DialogueState object.
+   * This is used when continuing a dialogue across different requests.
+   * @param state The DialogueState object to restore from.
+   */
+  public restoreState(state: DialogueState): void {
+    this.responses = new Map(Object.entries(state.responses));
+    this.currentPath = state.currentPath;
+    this.generatedNodes = new Map(Object.entries(state.generatedNodes));
+    this._category = state.category; // Use internal private property
+    this._originalQuery = state.originalQuery; // Use internal private property
+    this._userContext = state.userContext; // Use internal private property
+    this.initializeBAML(); // Re-initialize BAML client after state restoration
   }
   
   /**
@@ -41,7 +73,7 @@ export class SocraticDialogue {
   private async initializeBAML() {
     try {
       const { b } = await import('../../baml_client');
-      this.bamlClient = b;
+      this.bamlClient = b as BAMLClient; // Cast to our defined BAMLClient type
       logger.info('BAML client initialized for Socratic Dialogue');
     } catch (error) {
       logger.warn('BAML client not available, using static dialogue trees', error);
@@ -59,14 +91,14 @@ export class SocraticDialogue {
     this.responses.clear();
     this.currentPath = [];
     this.generatedNodes.clear();
-    this.category = category;
-    this.originalQuery = query;
-    this.userContext = context;
+    this._category = category;
+    this._originalQuery = query;
+    this._userContext = context;
     
     // Try LLM generation first
     if (this.bamlClient) {
       try {
-        const contextStr = `Project: ${context.project.language} ${context.project.framework || 'project'}`;
+        const contextStr = `Project: ${this._userContext?.project.language} ${this._userContext?.project.framework || 'project'}`;
         const dialogueQuestions = await this.bamlClient.GenerateDialogueQuestions(
           query,
           category,
@@ -75,9 +107,12 @@ export class SocraticDialogue {
         );
         
         if (dialogueQuestions.questions && dialogueQuestions.questions.length > 0) {
-          const firstQuestion = this.convertToDialogueNode(dialogueQuestions.questions[0]);
-          this.currentPath.push(firstQuestion.id);
-          return firstQuestion;
+          const firstQuestionData = dialogueQuestions.questions[0];
+          if (firstQuestionData) { // Explicit check for undefined
+            const firstQuestion = this.convertToDialogueNode(firstQuestionData);
+            this.currentPath.push(firstQuestion.id);
+            return firstQuestion;
+          }
         }
       } catch (error) {
         logger.warn('LLM dialogue generation failed, falling back to static', error);
@@ -91,7 +126,7 @@ export class SocraticDialogue {
   /**
    * Process a user response and get the next question
    */
-  async processResponse(nodeId: string, response: any): Promise<DialogueNode | null> {
+  async processResponse(nodeId: string, response: SocraticResponse): Promise<DialogueNode | null> {
     // Store the response
     this.responses.set(nodeId, response);
     
@@ -101,7 +136,7 @@ export class SocraticDialogue {
       // Generate next question based on all responses so far
       try {
         const responseHistory = this.buildResponseHistory();
-        const contextStr = `Project: ${this.userContext.project.language} ${this.userContext.project.framework || 'project'}`;
+        const contextStr = `Project: ${this._userContext?.project.language} ${this._userContext?.project.framework || 'project'}`;
         
         const dialogueQuestions = await this.bamlClient.GenerateDialogueQuestions(
           this.originalQuery,
@@ -113,14 +148,17 @@ export class SocraticDialogue {
         // Check if we should continue or stop
         if (dialogueQuestions.questions && dialogueQuestions.questions.length > 0) {
           // Filter out questions we've already asked
-          const newQuestions = dialogueQuestions.questions.filter((q: any) => 
+          const newQuestions = dialogueQuestions.questions.filter((q: BamlDialogueQuestion) => 
             !this.hasAskedSimilarQuestion(q.question)
           );
           
           if (newQuestions.length > 0) {
-            const nextQuestion = this.convertToDialogueNode(newQuestions[0]);
-            this.currentPath.push(nextQuestion.id);
-            return nextQuestion;
+            const nextQuestionData = newQuestions[0];
+            if (nextQuestionData) { // Explicit check for undefined
+              const nextQuestion = this.convertToDialogueNode(nextQuestionData);
+              this.currentPath.push(nextQuestion.id);
+              return nextQuestion;
+            }
           }
         }
         
@@ -156,10 +194,12 @@ export class SocraticDialogue {
       
       // For generated nodes, infer impacts from question content
       if (this.generatedNodes.has(nodeId)) {
-        const inferredTags = this.inferTagsFromQuestion(node.question, response);
+        // Ensure response is string for inferTagsFromQuestion and inferBoostsFromResponse
+        const responseStr = typeof response === 'string' ? response : (Array.isArray(response) ? response.join(', ') : '');
+        const inferredTags = this.inferTagsFromQuestion(node.question, responseStr);
         tags.push(...inferredTags);
         
-        const inferredBoosts = this.inferBoostsFromResponse(node.question, response);
+        const inferredBoosts = this.inferBoostsFromResponse(node.question, responseStr);
         Object.assign(boosts, inferredBoosts);
       } else if (node.impact) {
         // Static node with predefined impacts
@@ -202,14 +242,14 @@ export class SocraticDialogue {
   /**
    * Convert BAML DialogueQuestion to DialogueNode
    */
-  private convertToDialogueNode(question: any): DialogueNode {
+  private convertToDialogueNode(question: BamlDialogueQuestion): DialogueNode {
     // Generate stable ID from question content
     const id = this.generateQuestionId(question.question);
     
     const node: DialogueNode = {
       id,
       question: question.question,
-      type: question.type as 'single-choice' | 'multi-choice' | 'text',
+      type: question.type, // Type is now directly from BamlDialogueQuestion
       options: question.options?.map((opt: string) => ({
         value: this.generateOptionValue(opt),
         label: opt,
@@ -252,14 +292,19 @@ export class SocraticDialogue {
       const node = this.generatedNodes.get(nodeId) || this.findStaticNode(nodeId);
       if (!node) continue;
       
+      // Ensure response is string for history
+      const responseStr = typeof response === 'string' ? response : (Array.isArray(response) ? response.join(', ') : '');
+
       if (node.type === 'single-choice') {
-        const option = node.options?.find(opt => opt.value === response);
-        history.push(`Q: ${node.question} A: ${option?.label || response}`);
+        const option = node.options?.find(opt => opt.value === responseStr);
+        history.push(`Q: ${node.question} A: ${option?.label || responseStr}`);
       } else if (node.type === 'multi-choice' && Array.isArray(response)) {
         const labels = response.map(val => 
           node.options?.find(opt => opt.value === val)?.label || val
         );
         history.push(`Q: ${node.question} A: ${labels.join(', ')}`);
+      } else if (node.type === 'text') {
+        history.push(`Q: ${node.question} A: ${responseStr}`);
       }
     }
     
@@ -296,10 +341,10 @@ export class SocraticDialogue {
   /**
    * Infer tags from question and response
    */
-  private inferTagsFromQuestion(question: string, response: any): string[] {
+  private inferTagsFromQuestion(question: string, response: string): string[] {
     const tags: string[] = [];
     const questionLower = question.toLowerCase();
-    const responseLower = typeof response === 'string' ? response.toLowerCase() : '';
+    const responseLower = response.toLowerCase();
     
     // Common patterns to tags
     const patterns: Record<string, string[]> = {
@@ -322,9 +367,9 @@ export class SocraticDialogue {
   /**
    * Infer boost factors from response
    */
-  private inferBoostsFromResponse(question: string, response: any): Record<string, number> {
+  private inferBoostsFromResponse(question: string, response: string): Record<string, number> {
     const boosts: Record<string, number> = {};
-    const responseLower = typeof response === 'string' ? response.toLowerCase() : '';
+    const responseLower = response.toLowerCase();
     
     // Boost patterns based on common preferences
     if (responseLower.includes('postgres')) boosts['postgresql'] = 1.5;
@@ -371,7 +416,7 @@ export class SocraticDialogue {
   /**
    * Get suggested categories based on initial query
    */
-  static async suggestCategories(query: string, bamlClient?: any): Promise<string[]> {
+  static async suggestCategories(query: string, bamlClient?: BAMLClient): Promise<string[]> {
     // Try LLM-based category suggestion if available
     if (bamlClient) {
       try {

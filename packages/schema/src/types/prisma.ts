@@ -2,8 +2,22 @@ import type { ZodType, ZodObject, ZodRawShape } from '../zod-base';
 import { LogLevel } from '../logger';
 
 // Type definitions
-type SerializableJson = ZodObject<ZodRawShape>;
-type DeserializedJson = unknown;
+// Represents any Zod schema that can be serialized to JSON.
+// This includes primitives, objects, arrays, unions, records, and their optional/nullable/lazy variants.
+type SerializableJson =
+  | ZodType<string>
+  | ZodType<number>
+  | ZodType<boolean>
+  | ZodType<Date>
+  | ZodType<null>
+  | ZodType<unknown[] | readonly unknown[]> // ZodArray
+  | ZodObject<ZodRawShape> // ZodObject
+  | ZodType<Record<string, unknown>> // ZodRecord
+  | ZodType<unknown> // ZodUnion, ZodLazy, ZodOptional, ZodNullable
+  | ZodType<any>; // Fallback for other complex Zod types if needed
+
+// Represents the deserialized JavaScript value of a JSON-serializable schema.
+type DeserializedJson = unknown; // This remains 'unknown' as it's the runtime value
 
 interface PrismaFieldMetadata {
   unique?: boolean;

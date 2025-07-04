@@ -11,7 +11,10 @@ import type {
   SearchRequest, 
   UserContext, 
   AdaptedComponent,
-  DialogueNode 
+  DialogueNode,
+  DialogueState,
+  SocraticResponse,
+  AdaptationPlan // Add AdaptationPlan import
 } from '../types';
 import { GitHubIndexer } from './github-indexer';
 import { SocraticDialogue } from './socratic-dialogue-enhanced';
@@ -72,26 +75,26 @@ export class DiscoveryService {
    * Continue dialogue with user response
    */
   async continueDialogue(
-    dialogueState: any,
+    dialogueState: DialogueState,
     nodeId: string,
-    response: any
+    response: SocraticResponse
   ): Promise<{
     nextQuestion?: DialogueNode;
     searchRequest?: SearchRequest;
     components?: Component[];
   }> {
-    const dialogue = new SocraticDialogue();
-    // Restore dialogue state
-    Object.assign(dialogue, dialogueState);
+    const dialogue = new SocraticDialogue(dialogueState); // Pass state to constructor
+    // The SocraticDialogue constructor now handles state restoration internally.
+    // This ensures private properties are correctly set.
     
     const nextQuestion = await dialogue.processResponse(nodeId, response);
     
     if (!nextQuestion) {
       // Dialogue complete - build search request
       const searchRequest = dialogue.buildSearchRequest(
-        dialogueState.originalQuery,
-        dialogueState.category,
-        dialogueState.context
+        dialogue.originalQuery, // Use dialogue's own properties
+        dialogue.category,      // Use dialogue's own properties
+        dialogue.userContext!   // Use dialogue's own properties, assert non-null
       );
       
       // Perform search
@@ -146,7 +149,7 @@ export class DiscoveryService {
   async adaptComponent(
     componentId: string,
     context: UserContext,
-    customizations?: any
+    customizations?: Record<string, string> // Type for customizations
   ): Promise<AdaptedComponent> {
     const component = this.components.get(componentId);
     if (!component) {
@@ -195,9 +198,9 @@ export class DiscoveryService {
   private async generateAdaptationPlan(
     component: Component,
     context: UserContext,
-    customizations?: any
-  ): Promise<any> {
-    const plan: any = {
+    customizations?: Record<string, string> // Type for customizations
+  ): Promise<AdaptationPlan> { // Return type is now AdaptationPlan
+    const plan: AdaptationPlan = { // Initialize with AdaptationPlan type
       component: component.metadata.id,
       transformations: [],
       additions: [],

@@ -14,7 +14,16 @@ import { ComponentSchema, ComponentMetadataSchema } from '../types';
 import { logger } from '../utils/logger';
 import { generateEmbedding } from './embedding';
 import { analyzeCode } from './code-analyzer';
-import { b } from '../../baml_client';
+import { b } from '../../baml_client'; // Assuming 'b' is the BAML client instance
+import type { 
+  GitHubRepo, 
+  GitHubTree, 
+  GitHubTreeFile, 
+  GitHubFileContent, 
+  CodeAnalysisResult, 
+  BamlComponentQualityAssessment,
+  BAMLGitHubClientMethods
+} from '../types/github';
 
 // Quality thresholds configuration
 interface QualityThresholds {
@@ -40,6 +49,7 @@ export class GitHubIndexerEnhanced {
   private rateLimitRemaining = 5000;
   private qualityThresholds: QualityThresholds;
   private useLLMAssessment: boolean;
+  private bamlClient: BAMLGitHubClientMethods; // Type the BAML client
   
   constructor(
     token: string, 
@@ -51,6 +61,7 @@ export class GitHubIndexerEnhanced {
     this.octokit = new Octokit({ auth: token });
     this.qualityThresholds = { ...DEFAULT_THRESHOLDS, ...options.qualityThresholds };
     this.useLLMAssessment = options.useLLMAssessment ?? true;
+    this.bamlClient = b as BAMLGitHubClientMethods; // Cast the imported 'b'
   }
   
   /**
@@ -87,7 +98,10 @@ export class GitHubIndexerEnhanced {
       // Process each repository
       for (const repo of searchResult.data.items) {
         try {
-          const repoComponents = await this.indexRepository(repo, category);
+          // Cast to GitHubRepo to bypass Octokit's overly broad type definitions
+          // We've defined GitHubRepoSchema to cover the properties we actually use.
+          const typedRepo = repo as GitHubRepo; 
+          const repoComponents = await this.indexRepository(typedRepo, category);
           components.push(...repoComponents);
           
           // Respect rate limits
@@ -113,7 +127,7 @@ export class GitHubIndexerEnhanced {
   /**
    * Index a specific repository
    */
-  private async indexRepository(repo: any, category: string): Promise<Component[]> {
+  private async indexRepository(repo: GitHubRepo, category: string): Promise<Component[]> {
     logger.debug(`Indexing repository: ${repo.full_name}`);
     
     const components: Component[] = [];
@@ -121,7 +135,7 @@ export class GitHubIndexerEnhanced {
     try {
       // Get repository structure
       const { data: tree } = await this.octokit.git.getTree({
-        owner: repo.owner.login,
+        owner: repo.owner?.login ?? '', // Add null check for owner
         repo: repo.name,
         tree_sha: repo.default_branch,
         recursive: 'true',
@@ -169,7 +183,7 @@ export class GitHubIndexerEnhanced {
   /**
    * Find files that might contain relevant components
    */
-  private findRelevantFiles(tree: any[], category: string): any[] {
+  private findRelevantFiles(tree: GitHubTreeFile[], category: string): GitHubTreeFile[] {
     // Define patterns for different categories
     const patterns: Record<string, RegExp[]> = {
       auth: [
@@ -222,8 +236,8 @@ export class GitHubIndexerEnhanced {
    * Analyze a single file and extract component information
    */
   private async analyzeFile(context: {
-    repo: any;
-    file: any;
+    repo: GitHubRepo;
+    file: GitHubTreeFile;
     category: string;
   }): Promise<Component | null> {
     const { repo, file, category } = context;
@@ -231,9 +245,9 @@ export class GitHubIndexerEnhanced {
     try {
       // Get file content
       const { data: fileData } = await this.octokit.repos.getContent({
-        owner: repo.owner.login,
+        owner: repo.owner?.login ?? '', // Handle repo.owner being null
         repo: repo.name,
-        path: file.path,
+        path: file.path as string, // Explicitly assert as string to bypass TS error
       });
       
       // Ensure we have file content
@@ -249,30 +263,35 @@ export class GitHubIndexerEnhanced {
       }
       
       // Parse and analyze the code
-      const analysis = await analyzeCode(content, file.path);
+      const analysis: CodeAnalysisResult | null = await analyzeCode(content, file.path);
       if (!analysis) return null;
       
       // Generate metadata
       const licenseId = repo.license?.spdx_id;
-      const licenseString: string = typeof licenseId === 'string' ? licenseId : 'UNKNOWN';
+      const licenseString: string = licenseId ?? 'UNKNOWN'; // Use nullish coalescing for spdx_id
+      
+      // Ensure html_url and updated_at are strings, providing fallbacks if null
+      const fileHtmlUrl = fileData.html_url ?? `https://github.com/${repo.full_name}/blob/${file.sha}/${file.path}`;
+      const repoUpdatedAt = repo.updated_at; // This is already string.datetime() in schema
+      
       const metadata: ComponentMetadata = {
-        id: `${repo.full_name}/${file.path}@${file.sha}`,
-        name: analysis.name || file.path.split('/').pop()?.replace(/\.(ts|js|tsx|jsx)$/, '') || 'Unknown',
-        description: analysis.description || `${category} component from ${repo.full_name}`,
+        id: `${repo.full_name}/${file.path ?? 'unknown'}@${file.sha ?? 'unknown'}`, // Handle file.path and file.sha possibly undefined
+        name: analysis.name ?? file.path?.split('/').pop()?.replace(/\.(ts|js|tsx|jsx)$/, '') ?? 'Unknown', // Use nullish coalescing for analysis.name
+        description: analysis.description ?? `${category} component from ${repo.full_name}`, // Use nullish coalescing for analysis.description
         
         source: {
           type: 'github',
           repo: repo.full_name,
-          path: file.path,
-          commit: file.sha,
-          url: fileData.html_url,
+          path: file.path ?? 'unknown', // Handle file.path possibly undefined
+          commit: file.sha ?? 'unknown', // Handle file.sha possibly undefined
+          url: fileHtmlUrl, // Use the potentially fallback URL
           license: licenseString,
         },
         
         quality: {
           stars: repo.stargazers_count,
           forks: repo.forks_count,
-          lastUpdated: repo.updated_at,
+          lastUpdated: repoUpdatedAt,
           hasTests: analysis.hasTests || false,
           hasDocumentation: analysis.hasDocumentation || !!repo.description,
         },
@@ -286,7 +305,7 @@ export class GitHubIndexerEnhanced {
         },
         
         embedding: await generateEmbedding(
-          `${analysis.name} ${analysis.description} ${category} ${analysis.patterns.join(' ')}`
+          `${(analysis.name ?? '') as string} ${(analysis.description ?? '') as string} ${category} ${analysis.patterns.join(' ')}` // Explicitly assert as string to bypass TS error
         ),
         tags: [...analysis.tags, category],
         category,
@@ -329,7 +348,7 @@ export class GitHubIndexerEnhanced {
   /**
    * Generate Socratic questions that would lead to this component
    */
-  private generateQuestions(analysis: any, category: string): string[] {
+  private generateQuestions(analysis: CodeAnalysisResult, category: string): string[] {
     const questions: string[] = [];
     
     // Category-specific questions
@@ -368,7 +387,7 @@ export class GitHubIndexerEnhanced {
   private async assessComponentQuality(component: Component): Promise<{
     passed: boolean;
     reason?: string;
-    assessment?: any;
+    assessment?: BamlComponentQualityAssessment; // Type the assessment
   }> {
     // First, apply basic filters
     const basicCheckResult = this.basicQualityCheck(component);
@@ -383,7 +402,7 @@ export class GitHubIndexerEnhanced {
     
     try {
       // Use LLM to assess quality
-      const assessment = await b.AssessComponentQuality(
+      const assessment = await this.bamlClient.AssessComponentQuality( // Use typed bamlClient
         component.metadata.name,
         component.code.raw,
         component.metadata.quality.hasTests,

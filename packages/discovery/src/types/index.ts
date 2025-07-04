@@ -289,3 +289,29 @@ export const AdaptedComponentSchema = z.object({
 });
 
 export type AdaptedComponent = z.infer<typeof AdaptedComponentSchema>;
+
+/**
+ * Represents a user's response in the Socratic dialogue.
+ * Can be a string (for text/single-choice) or an array of strings (for multi-choice).
+ */
+export const SocraticResponseSchema = z.union([
+  z.string(),
+  z.array(z.string())
+]);
+
+export type SocraticResponse = z.infer<typeof SocraticResponseSchema>;
+
+/**
+ * Represents the full state of the Socratic dialogue.
+ * This is used for serialization/deserialization to continue a dialogue.
+ */
+export const DialogueStateSchema = z.object({
+  responses: z.record(SocraticResponseSchema).describe('Map of node IDs to user responses'),
+  currentPath: z.array(z.string()).describe('Path of visited dialogue nodes'),
+  generatedNodes: z.record(DialogueNodeSchema).describe('Map of dynamically generated dialogue nodes'),
+  category: z.string().describe('The category of the current dialogue'),
+  originalQuery: z.string().describe('The original user query'),
+  userContext: UserContextSchema.describe('The user context for the dialogue'),
+});
+
+export type DialogueState = z.infer<typeof DialogueStateSchema>;

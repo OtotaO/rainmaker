@@ -6,7 +6,7 @@
  */
 
 import * as parser from '@babel/parser';
-import traverse from '@babel/traverse';
+import traverse, { NodePath } from '@babel/traverse'; // Import NodePath
 import generate from '@babel/generator';
 import * as t from '@babel/types';
 import { format } from 'prettier';
@@ -17,7 +17,11 @@ import type {
   AdaptedComponent 
 } from '../types';
 import { logger } from '../utils/logger';
-import { b } from '../../baml_client';
+import { b } from '../../baml_client'; // Assuming 'b' is the BAML client instance
+import type { 
+  BamlSuggestCodeTransformationsOutput, 
+  BAMLAdaptationClientMethods 
+} from '../types/baml'; // Import new BAML types
 
 export interface EnhancedAdaptationOptions {
   useLLMSuggestions?: boolean;
@@ -27,6 +31,7 @@ export interface EnhancedAdaptationOptions {
 
 export class EnhancedAdaptationEngine {
   private options: Required<EnhancedAdaptationOptions>;
+  private bamlClient: BAMLAdaptationClientMethods; // Type the BAML client
   
   constructor(options: EnhancedAdaptationOptions = {}) {
     this.options = {
@@ -34,6 +39,7 @@ export class EnhancedAdaptationEngine {
       autoApplySuggestions: options.autoApplySuggestions ?? false,
       suggestionConfidenceThreshold: options.suggestionConfidenceThreshold ?? 0.7,
     };
+    this.bamlClient = b as BAMLAdaptationClientMethods; // Cast the imported 'b'
   }
   
   /**
@@ -42,7 +48,7 @@ export class EnhancedAdaptationEngine {
   async generateEnhancedPlan(
     component: Component,
     context: UserContext,
-    customizations?: any
+    customizations?: Record<string, string> // Type customizations
   ): Promise<AdaptationPlan> {
     logger.info(`Generating enhanced adaptation plan for: ${component.metadata.id}`);
     
@@ -84,8 +90,8 @@ export class EnhancedAdaptationEngine {
   private async getLLMSuggestions(
     component: Component,
     context: UserContext,
-    customizations?: any
-  ): Promise<any> {
+    customizations?: Record<string, string> // Type customizations
+  ): Promise<BamlSuggestCodeTransformationsOutput> { // Type return
     // Prepare target patterns based on context
     const targetPatterns = [
       `${context.project.conventions.naming} naming convention`,
@@ -188,7 +194,7 @@ export class EnhancedAdaptationEngine {
   /**
    * Integrate LLM suggestions into the adaptation plan
    */
-  private integrateTransformationSuggestions(plan: AdaptationPlan, suggestions: any): void {
+  private integrateTransformationSuggestions(plan: AdaptationPlan, suggestions: BamlSuggestCodeTransformationsOutput): void { // Type suggestions
     // Process structural changes
     for (const change of suggestions.structural_changes) {
       if (change.priority === 'high' || this.options.autoApplySuggestions) {
@@ -208,8 +214,9 @@ export class EnhancedAdaptationEngine {
     for (const adaptation of suggestions.pattern_adaptations) {
       if (adaptation.priority === 'high') {
         // These map directly to our pattern transformations
-        const [patternType, from, to] = this.parsePatternAdaptation(adaptation);
-        if (patternType) {
+        const parsedAdaptation = this.parsePatternAdaptation(adaptation);
+        if (parsedAdaptation) { // Add null check
+          const [patternType, from, to] = parsedAdaptation;
           plan.transformations.push({
             type: 'pattern',
             pattern: patternType,
@@ -283,7 +290,7 @@ export class EnhancedAdaptationEngine {
   private addCustomizations(
     plan: AdaptationPlan,
     component: Component,
-    customizations: any
+    customizations: Record<string, string> // Type customizations
   ): void {
     for (const [key, value] of Object.entries(customizations)) {
       const variable = component.customization.variables.find(v => v.name === key);
@@ -311,13 +318,14 @@ export class EnhancedAdaptationEngine {
     const files: Array<{ path: string; content: string; description: string }> = [];
     
     // Parse the code
-    const ast = parser.parse(code, {
+    const ast: t.File = parser.parse(code, { // Type AST as t.File
       sourceType: 'module',
       plugins: ['typescript', 'jsx'],
     });
     
     // Apply transformations in order
     for (const transformation of plan.transformations) {
+      // Use type guards to narrow down transformation type
       switch (transformation.type) {
         case 'rename':
           this.applyRename(ast, transformation);
@@ -328,7 +336,7 @@ export class EnhancedAdaptationEngine {
           break;
           
         case 'inject':
-          this.applyInjection(ast, transformation, component);
+          this.applyInjection(ast, transformation, component); // Re-add component argument
           break;
           
         case 'pattern':
@@ -414,19 +422,36 @@ export class EnhancedAdaptationEngine {
   /**
    * Parse import change from code example
    */
-  private parseImportChange(codeExample: string): { from: string; to: string; style?: string } | null {
+  private parseImportChange(codeExample: string): { from: string; to: string; style?: 'named' | 'default' | 'namespace' } | null {
     // Simple regex to extract import statements
     const importRegex = /import\s+(?:{([^}]+)}|(\w+))\s+from\s+['"]([^'"]+)['"]/g;
     const matches = [...codeExample.matchAll(importRegex)];
     
     if (matches.length >= 2) {
-      const [, namedImports1, defaultImport1, module1] = matches[0];
-      const [, namedImports2, defaultImport2, module2] = matches[1];
+      const match1 = matches[0];
+      const match2 = matches[1];
+
+      // Ensure matches are not null/undefined before destructuring
+      if (!match1 || !match2) return null;
       
+      const [, namedImports1, defaultImport1, module1] = match1;
+      const [, namedImports2, defaultImport2, module2] = match2;
+      
+      let style: 'named' | 'default' | 'namespace' | undefined;
+      if (namedImports2) {
+        style = 'named';
+      } else if (defaultImport2) {
+        style = 'default';
+      } else {
+        // If neither named nor default, it might be a namespace import or just a side-effect import
+        // For now, default to undefined or add more sophisticated detection
+        style = undefined; 
+      }
+
       return {
         from: module1,
         to: module2,
-        style: namedImports2 ? 'named' : 'default',
+        style,
       };
     }
     
@@ -439,10 +464,10 @@ export class EnhancedAdaptationEngine {
   private parseConfigUpdate(config: any): { variable: string; value: string } | null {
     // Try to extract variable name and value from description
     const match = config.description.match(/set\s+(\w+)\s+to\s+(.+)/i);
-    if (match) {
+    if (match && match[1] && match[2]) { // Add null/undefined checks for match groups
       return {
-        variable: match[1],
-        value: match[2].trim().replace(/['"]/g, ''),
+        variable: match[1] as string, // Explicitly cast to string
+        value: (match[2].trim().replace(/['"]/g, '')) as string, // Explicitly cast to string
       };
     }
     
@@ -546,9 +571,10 @@ export class EnhancedAdaptationEngine {
   /**
    * Apply rename transformation
    */
-  private applyRename(ast: any, transformation: any): void {
+  private applyRename(ast: t.File, transformation: AdaptationPlan['transformations'][number]): void {
+    if (transformation.type !== 'rename') return; // Type guard
     traverse(ast, {
-      Identifier(path) {
+      Identifier(path: NodePath<t.Identifier>) { // Type path
         if (path.node.name === transformation.from) {
           path.node.name = transformation.to;
         }
@@ -559,9 +585,10 @@ export class EnhancedAdaptationEngine {
   /**
    * Apply import replacement
    */
-  private applyImportReplace(ast: any, transformation: any): void {
+  private applyImportReplace(ast: t.File, transformation: AdaptationPlan['transformations'][number]): void {
+    if (transformation.type !== 'replace-import') return; // Type guard
     traverse(ast, {
-      ImportDeclaration(path) {
+      ImportDeclaration(path: NodePath<t.ImportDeclaration>) { // Type path
         if (path.node.source.value === transformation.from) {
           path.node.source.value = transformation.to;
           
@@ -586,7 +613,9 @@ export class EnhancedAdaptationEngine {
   /**
    * Apply code injection
    */
-  private applyInjection(ast: any, transformation: any, component: Component): void {
+  private applyInjection(ast: t.File, transformation: AdaptationPlan['transformations'][number], component: Component): void { // Re-add component argument
+    if (transformation.type !== 'inject') return; // Type guard
+    
     const injectionPoint = component.customization.injectionPoints.find(
       p => p.id === transformation.point
     );
@@ -597,7 +626,7 @@ export class EnhancedAdaptationEngine {
     }
     
     // Parse the code to inject
-    const codeToInject = parser.parse(transformation.code, {
+    const codeToInject: t.File = parser.parse(transformation.code, { // Type codeToInject
       sourceType: 'module',
       plugins: ['typescript', 'jsx'],
     });
@@ -605,20 +634,20 @@ export class EnhancedAdaptationEngine {
     // Find the injection location and apply
     const self = this;
     traverse(ast, {
-      enter(path) {
-        if (self.matchesLocation(path, injectionPoint.location)) {
+      enter(path: NodePath<t.Node>) { // Type path
+        if (self.matchesLocation(path, injectionPoint.location)) { // Use injectionPoint.location
           switch (transformation.position) {
             case 'before':
-              self.injectBefore(path, codeToInject);
+              self.injectBefore(path as NodePath<t.FunctionDeclaration | t.ClassMethod>, codeToInject);
               break;
             case 'after':
-              self.injectAfter(path, codeToInject);
+              self.injectAfter(path as NodePath<t.FunctionDeclaration | t.ClassMethod>, codeToInject);
               break;
             case 'replace':
-              self.injectReplace(path, codeToInject);
+              self.injectReplace(path as NodePath<t.FunctionDeclaration | t.ClassMethod>, codeToInject);
               break;
             case 'wrap':
-              self.injectWrap(path, codeToInject);
+              self.injectWrap(path as NodePath<t.FunctionDeclaration | t.ClassMethod>, codeToInject);
               break;
           }
         }
@@ -629,11 +658,12 @@ export class EnhancedAdaptationEngine {
   /**
    * Apply pattern changes (naming conventions, etc)
    */
-  private applyPatternChange(ast: any, transformation: any, context: UserContext): void {
+  private applyPatternChange(ast: t.File, transformation: AdaptationPlan['transformations'][number], context: UserContext): void {
+    if (transformation.type !== 'pattern') return; // Type guard
     if (transformation.pattern === 'naming') {
       // Convert between naming conventions
       traverse(ast, {
-        Identifier(path) {
+        Identifier(path: NodePath<t.Identifier>) { // Type path
           // Check if this identifier should be renamed (skip built-ins and keywords)
           if (path.isReferencedIdentifier() && !isBuiltinIdentifier(path.node.name)) {
             path.node.name = convertNaming(
@@ -653,9 +683,10 @@ export class EnhancedAdaptationEngine {
   /**
    * Apply configuration changes
    */
-  private applyConfiguration(ast: any, transformation: any): void {
+  private applyConfiguration(ast: t.File, transformation: AdaptationPlan['transformations'][number]): void {
+    if (transformation.type !== 'configure') return; // Type guard
     traverse(ast, {
-      VariableDeclarator(path) {
+      VariableDeclarator(path: NodePath<t.VariableDeclarator>) { // Type path
         if (t.isIdentifier(path.node.id) && 
             path.node.id.name.match(/config|options|settings/i)) {
           // Find the property and update its value
@@ -678,11 +709,11 @@ export class EnhancedAdaptationEngine {
   }
   
   // Include all helper methods from original implementation
-  private convertErrorHandling(ast: any, from: string, to: string): void {
+  private convertErrorHandling(ast: t.File, from: string, to: string): void { // Type ast
     // Implementation from original
   }
   
-  private matchesLocation(path: any, location: string): boolean {
+  private matchesLocation(path: NodePath<t.Node>, location: string): boolean { // Type path
     const [type, name] = location.split(':');
     
     if (type === 'function' && path.isFunctionDeclaration()) {
@@ -694,7 +725,7 @@ export class EnhancedAdaptationEngine {
     return false;
   }
   
-  private injectBefore(path: any, code: any): void {
+  private injectBefore(path: NodePath<t.FunctionDeclaration | t.ClassMethod>, code: t.File): void { // Type path and code
     if (path.isFunctionDeclaration() || path.isClassMethod()) {
       const body = path.node.body;
       if (t.isBlockStatement(body)) {
@@ -703,7 +734,7 @@ export class EnhancedAdaptationEngine {
     }
   }
   
-  private injectAfter(path: any, code: any): void {
+  private injectAfter(path: NodePath<t.FunctionDeclaration | t.ClassMethod>, code: t.File): void { // Type path and code
     if (path.isFunctionDeclaration() || path.isClassMethod()) {
       const body = path.node.body;
       if (t.isBlockStatement(body)) {
@@ -712,7 +743,7 @@ export class EnhancedAdaptationEngine {
     }
   }
   
-  private injectReplace(path: any, code: any): void {
+  private injectReplace(path: NodePath<t.FunctionDeclaration | t.ClassMethod>, code: t.File): void { // Type path and code
     if (path.isFunctionDeclaration() || path.isClassMethod()) {
       const body = path.node.body;
       if (t.isBlockStatement(body)) {
@@ -721,7 +752,7 @@ export class EnhancedAdaptationEngine {
     }
   }
   
-  private injectWrap(path: any, code: any): void {
+  private injectWrap(path: NodePath<t.FunctionDeclaration | t.ClassMethod>, code: t.File): void { // Type path and code
     // This would wrap the existing code with new code
     // Implementation depends on specific use case
     logger.debug('Wrap injection not yet implemented');
