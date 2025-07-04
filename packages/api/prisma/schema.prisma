@@ -1,189 +1,56 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-model Component {
-  metadataId String
-  metadata ComponentMetadata @relation("ComponentToComponentMetadata", fields: [metadataId], references: [id])
-  codeId String
-  code ComponentCode @relation("ComponentToComponentCode", fields: [codeId], references: [id])
-  promptsId String
-  prompts ComponentPrompts @relation("ComponentToComponentPrompts", fields: [promptsId], references: [id])
-  customizationId String
-  customization ComponentCustomization @relation("ComponentToComponentCustomization", fields: [customizationId], references: [id])
+model ProductHighLevelDescription {
   id String @id @default(uuid())
+  name String
+  description String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model AdaptedComponent {
-  originalId String
-  original ComponentMetadata @relation("AdaptedComponentToComponentMetadata", fields: [originalId], references: [id])
-  adaptedId String
-  adapted AdaptedComponentAdapted @relation("AdaptedComponentToAdaptedComponentAdapted", fields: [adaptedId], references: [id])
-  planId String
-  plan AdaptedComponentPlan @relation("AdaptedComponentToAdaptedComponentPlan", fields: [planId], references: [id])
-  id String @id @default(uuid())
+model LearningJournalEntry {
+  id                                     String              @id @default(uuid())
+  timestamp                              DateTime @default(now())
+  userAction                             String
+  details                                String
+  selfReflectionOnCurrentDetails         String
+  globalSelfReflectionOnEntireJournalSoFar String
+  plannedAdjustments                     PlannedAdjustment[]
 }
 
-model ComponentMetadata {
-id String @id
-name String
-description String
-  sourceId String
-  source ComponentMetadataSource @relation("ComponentMetadataToComponentMetadataSource", fields: [sourceId], references: [id])
-  qualityId String
-  quality ComponentMetadataQuality @relation("ComponentMetadataToComponentMetadataQuality", fields: [qualityId], references: [id])
-  technicalId String
-  technical ComponentMetadataTechnical @relation("ComponentMetadataToComponentMetadataTechnical", fields: [technicalId], references: [id])
-embedding Int[]
-tags String[]
-category String
-
-  component Component @relation("ComponentToComponentMetadata")
-
-  adaptedcomponent AdaptedComponent @relation("AdaptedComponentToComponentMetadata")
+model PlannedAdjustment {
+  id                     String              @id @default(uuid())
+  reasoningForAdjustment String
+  adjustmentDescription  String
+  learningJournalEntry   LearningJournalEntry @relation(fields: [learningJournalEntryId], references: [id])
+  learningJournalEntryId String
 }
 
-model ComponentMetadataSource {
-type String @default("github")
-repo String
-path String
-commit String
-url String
-license String
-  id String @id @default(uuid())
-
-  componentmetadata ComponentMetadata @relation("ComponentMetadataToComponentMetadataSource")
+model AIAssistanceLevel {
+  id          String @id @default(uuid())
+  level       Int
+  explanation String
 }
 
-model ComponentMetadataQuality {
-stars Int
-forks Int
-lastUpdated DateTime
-hasTests Boolean
-testCoverage Int?
-hasDocumentation Boolean
-weeklyDownloads Int?
-  id String @id @default(uuid())
+model ConfigSetting {
+  id           String    @id @default(uuid())
+  key          String    @unique
+  value        String    // Stores JSON stringified value for non-string types
+  description  String?
+  category     String?
+  isEncrypted  Boolean   @default(false)
+  lastModified DateTime  @default(now()) @updatedAt
+  version      Int       @default(1)
 
-  componentmetadata ComponentMetadata @relation("ComponentMetadataToComponentMetadataQuality")
-}
-
-model ComponentMetadataTechnical {
-language String
-framework String?
-dependencies String[]
-apis String[]
-patterns String[]
-  id String @id @default(uuid())
-
-  componentmetadata ComponentMetadata @relation("ComponentMetadataToComponentMetadataTechnical")
-}
-
-model ComponentCode {
-raw String
-ast Json @db.Json
-normalized String
-  id String @id @default(uuid())
-
-  component Component @relation("ComponentToComponentCode")
-}
-
-model ComponentPrompts {
-primary String
-variants String[]
-questions String[]
-  id String @id @default(uuid())
-
-  component Component @relation("ComponentToComponentPrompts")
-}
-
-model ComponentCustomization {
-  variables ComponentCustomizationVariables[] @relation("ComponentCustomizationToComponentCustomizationVariables")
-  injectionPoints ComponentCustomizationInjectionPoints[] @relation("ComponentCustomizationToComponentCustomizationInjectionPoints")
-  patterns ComponentCustomizationPatterns[] @relation("ComponentCustomizationToComponentCustomizationPatterns")
-  id String @id @default(uuid())
-
-  component Component @relation("ComponentToComponentCustomization")
-}
-
-model ComponentCustomizationVariables {
-name String
-type String
-description String
-defaultValue String?
-  id String @id @default(uuid())
-
-  componentcustomization ComponentCustomization @relation("ComponentCustomizationToComponentCustomizationVariables")
-}
-
-model ComponentCustomizationInjectionPoints {
-id String @id
-description String
-type String
-location String
-
-  componentcustomization ComponentCustomization @relation("ComponentCustomizationToComponentCustomizationInjectionPoints")
-}
-
-model ComponentCustomizationPatterns {
-type String
-current String
-description String
-  id String @id @default(uuid())
-
-  componentcustomization ComponentCustomization @relation("ComponentCustomizationToComponentCustomizationPatterns")
-}
-
-model AdaptedComponentAdapted {
-code String
-  files AdaptedComponentAdaptedFiles[] @relation("AdaptedComponentAdaptedToAdaptedComponentAdaptedFiles")
-  instructionsId String
-  instructions AdaptedComponentAdaptedInstructions @relation("AdaptedComponentAdaptedToAdaptedComponentAdaptedInstructions", fields: [instructionsId], references: [id])
-attribution String
-  id String @id @default(uuid())
-
-  adaptedcomponent AdaptedComponent @relation("AdaptedComponentToAdaptedComponentAdapted")
-}
-
-model AdaptedComponentAdaptedFiles {
-path String
-content String
-description String
-  id String @id @default(uuid())
-
-  adaptedcomponentadapted AdaptedComponentAdapted @relation("AdaptedComponentAdaptedToAdaptedComponentAdaptedFiles")
-}
-
-model AdaptedComponentAdaptedInstructions {
-install String[]
-setup String[]
-usage String
-  id String @id @default(uuid())
-
-  adaptedcomponentadapted AdaptedComponentAdapted @relation("AdaptedComponentAdaptedToAdaptedComponentAdaptedInstructions")
-}
-
-model AdaptedComponentPlan {
-component String
-transformations Json[]
-  additionsId String?
-  additions AdaptedComponentPlanAdditions? @relation("AdaptedComponentPlanToAdaptedComponentPlanAdditions", fields: [additionsId], references: [id])
-  id String @id @default(uuid())
-
-  adaptedcomponent AdaptedComponent @relation("AdaptedComponentToAdaptedComponentPlan")
-}
-
-model AdaptedComponentPlanAdditions {
-path String
-content String
-description String
-  id String @id @default(uuid())
-
-  adaptedcomponentplan AdaptedComponentPlan @relation("AdaptedComponentPlanToAdaptedComponentPlanAdditions")
+  @@index([key])
+  @@index([category])
 }
