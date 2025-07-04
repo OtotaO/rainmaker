@@ -2,7 +2,7 @@
 
 > **Production-ready semantic search engine for proven code components**
 
-Rainmaker Discovery helps you find, understand, and adapt existing code solutions instead of writing everything from scratch. **Phase 2.3 Complete** - Now with advanced AST-based code transformation and GitHub indexing.
+Rainmaker Discovery helps you find, understand, and adapt existing code solutions instead of writing everything from scratch. **Phase 3.1 Complete** - Now with full LLM integration and AI-powered discovery.
 
 ## ✨ Current Features
 
@@ -16,6 +16,10 @@ Rainmaker Discovery helps you find, understand, and adapt existing code solution
 - 🔧 **Advanced AST transformations** for error handling patterns
 - 📝 **Naming convention conversion** (camelCase ↔ snake_case ↔ kebab-case)
 - 📦 **Import/export style transformation** (default ↔ named ↔ namespace)
+- 🧠 **LLM-enhanced discovery** with graceful fallbacks (no API keys required)
+- 💬 **Dynamic Socratic dialogue** for requirement refinement
+- ⭐ **AI-powered quality assessment** across 5 dimensions
+- 🔎 **Intelligent search refinement** with context awareness
 
 ## 🎯 Implementation Status
 
