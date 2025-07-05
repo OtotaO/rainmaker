@@ -5,17 +5,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../@/components/ui/card';
-import { Button } from '../../@/components/ui/button';
-import { Input } from '../../@/components/ui/input';
-import { Label } from '../../@/components/ui/label';
-import { Alert, AlertDescription } from '../../@/components/ui/alert';
-import { Badge } from '../../@/components/ui/badge';
-import { ScrollArea } from '../../@/components/ui/scroll-area';
-import { Textarea } from '../../@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Badge } from '../ui/badge';
+import { ScrollArea } from '../ui/scroll-area';
+import { Textarea } from '../ui/textarea';
 
 interface DiscoveryFlowProps {
-  onComplete?: (adaptedCode: any) => void;
+  onComplete: (adaptedCode: any) => void;
 }
 
 type FlowState = 
@@ -49,6 +49,22 @@ interface Component {
 }
 
 export const DiscoveryFlow: React.FC<DiscoveryFlowProps> = ({ onComplete }) => {
+  const handleComplete = (adaptedCode: any) => {
+    console.log('Component adaptation complete:', adaptedCode);
+    if (onComplete) {
+      // Format the adapted code for the DiscoveryPage
+      const formattedCode = {
+        code: adaptedCode.adapted?.code || '',
+        language: adaptedCode.metadata?.technical?.language || 'typescript',
+        filename: `${adaptedCode.metadata?.name || 'component'}.${(adaptedCode.metadata?.technical?.language || 'tsx').toLowerCase()}`,
+        instructions: {
+          install: adaptedCode.adapted?.instructions?.install || [],
+          usage: adaptedCode.adapted?.instructions?.usage || ''
+        }
+      };
+      onComplete(formattedCode);
+    }
+  };
   const [flowState, setFlowState] = useState<FlowState>('initial');
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);

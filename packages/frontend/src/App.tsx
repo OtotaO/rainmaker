@@ -1,19 +1,33 @@
-// START: [APP-01]
-import type React from 'react';
-import { PRDGenerator } from './components/PRDGenerator';
-import type { FinalizedPRD } from '../../shared/src/types';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from './components/ui/theme-provider';
+
+// Layout
+import MainLayout from './components/layout/MainLayout';
+
+// Pages
 import ProductHub from './components/ProductHub';
+import DiscoveryPage from './pages/DiscoveryPage';
 
 const App: React.FC = () => {
-  const handlePRDComplete = (finalizedPRD: FinalizedPRD) => {
-    console.log('Finalized PRD:', finalizedPRD);
-    // Here you can add any additional logic you want to perform when the PRD is finalized
-  };
-
   return (
-    <ProductHub />
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <Router>
+        <Routes>
+          <Route path="/" element={
+            <MainLayout>
+              <ProductHub />
+            </MainLayout>
+          } />
+          <Route path="/discover" element={
+            <MainLayout>
+              <DiscoveryPage />
+            </MainLayout>
+          } />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 };
 
 export default App;
-// END: [APP-01]
