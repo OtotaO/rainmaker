@@ -1,143 +1,247 @@
 #!/usr/bin/env bun
 /**
- * CLI for testing the Discovery Engine
- * 
- * This demonstrates the core functionality without getting bogged down in type issues.
+ * Rainmaker Discovery CLI
+ * The fastest way to build production-ready applications
  */
 
-import { DiscoveryEngine } from './core/discovery-engine';
+import { Command } from 'commander';
+import { listPatterns, getPattern, searchPatterns, getCategories } from './patterns';
+import { SimpleAdaptationEngine } from './services/simple-adaptation-engine';
+import { promises as fs } from 'fs';
+import * as path from 'path';
+import chalk from 'chalk';
+import ora from 'ora';
+import inquirer from 'inquirer';
 
-async function main() {
-  console.log('🔍 Rainmaker Discovery Engine Demo\n');
-  
-  try {
-    // Initialize the discovery engine
-    const engine = new DiscoveryEngine({
-      dataDir: './data/discovery',
+const program = new Command();
+const engine = new SimpleAdaptationEngine();
+
+program
+  .name('rainmaker')
+  .description('Build production-ready applications from proven patterns')
+  .version('1.0.0');
+
+// List all patterns
+program
+  .command('list')
+  .description('List all available patterns')
+  .option('-c, --category <category>', 'Filter by category')
+  .action((options) => {
+    const patterns = listPatterns();
+    const categories = getCategories();
+    
+    console.log(chalk.bold('\n🚀 Rainmaker Discovery - Available Patterns\n'));
+    
+    if (options.category) {
+      const filtered = patterns.filter(p => p.category === options.category);
+      console.log(chalk.blue(`Category: ${options.category}\n`));
+      filtered.forEach(p => {
+        console.log(`  ${chalk.green(p.id)} - ${p.name}`);
+        console.log(`    ${chalk.gray(p.description)}\n`);
+      });
+    } else {
+      categories.forEach(cat => {
+        console.log(chalk.blue(`\n${cat.toUpperCase()}`));
+        patterns
+          .filter(p => p.category === cat)
+          .forEach(p => {
+            console.log(`  ${chalk.green(p.id)} - ${p.name}`);
+            console.log(`    ${chalk.gray(p.description)}`);
+          });
+      });
+    }
+    
+    console.log(chalk.dim('\nUse "rainmaker show <pattern-id>" to see details'));
+  });
+
+// Show pattern details
+program
+  .command('show <pattern>')
+  .description('Show details about a specific pattern')
+  .action((patternId) => {
+    const pattern = getPattern(patternId);
+    
+    if (!pattern) {
+      console.error(chalk.red(`Pattern "${patternId}" not found`));
+      process.exit(1);
+    }
+    
+    console.log(chalk.bold(`\n📦 ${pattern.name}\n`));
+    console.log(`${chalk.gray('ID:')} ${pattern.id}`);
+    console.log(`${chalk.gray('Category:')} ${pattern.category}`);
+    console.log(`${chalk.gray('Description:')} ${pattern.description}`);
+    console.log(`${chalk.gray('Tags:')} ${pattern.tags.join(', ')}`);
+    
+    console.log(chalk.bold('\n📚 Dependencies:'));
+    Object.entries(pattern.dependencies).forEach(([name, version]) => {
+      console.log(`  ${name}: ${version}`);
     });
     
-    console.log('Initializing discovery engine...');
-    await engine.initialize();
+    console.log(chalk.bold('\n⚙️  Customization Options:'));
+    pattern.customization.variables.forEach(v => {
+      console.log(`  ${chalk.cyan(v.name)} (${v.type}) - ${v.description}`);
+      if (v.defaultValue) {
+        console.log(`    Default: ${v.defaultValue}`);
+      }
+    });
     
-    // Test search functionality
-    console.log('\n--- Testing Search ---');
+    console.log(chalk.dim('\nUse "rainmaker adapt <pattern-id>" to use this pattern'));
+  });
+
+// Search patterns
+program
+  .command('search <query>')
+  .description('Search for patterns')
+  .action((query) => {
+    const results = searchPatterns(query);
     
-    const queries = [
-      'Google OAuth authentication',
-      'JWT token middleware',
-      'Stripe payment processing',
-      'user authentication',
-      'payment integration',
-    ];
+    if (results.length === 0) {
+      console.log(chalk.yellow(`No patterns found for "${query}"`));
+      return;
+    }
     
-    for (const query of queries) {
-      console.log(`\nSearching for: "${query}"`);
-      
-      try {
-        const results = await engine.search(query, undefined, 3);
-        
-        if (results.length === 0) {
-          console.log('  No results found');
-          continue;
+    console.log(chalk.bold(`\n🔍 Search Results for "${query}":\n`));
+    results.forEach(p => {
+      console.log(`  ${chalk.green(p.id)} - ${p.name}`);
+      console.log(`    ${chalk.gray(p.description)}\n`);
+    });
+  });
+
+// Adapt a pattern
+program
+  .command('adapt <pattern>')
+  .description('Adapt a pattern to your project')
+  .option('-o, --output <path>', 'Output file path', './output.ts')
+  .option('-n, --naming <style>', 'Naming convention (camelCase, snake_case, kebab-case, PascalCase)')
+  .option('-e, --error-handling <style>', 'Error handling style (try-catch, promises, async-await)')
+  .option('-i, --interactive', 'Interactive mode for customization')
+  .action(async (patternId, options) => {
+    const pattern = getPattern(patternId);
+    
+    if (!pattern) {
+      console.error(chalk.red(`Pattern "${patternId}" not found`));
+      process.exit(1);
+    }
+    
+    console.log(chalk.bold(`\n🔧 Adapting ${pattern.name}\n`));
+    
+    let adaptOptions: any = {
+      naming: options.naming,
+      errorHandling: options.errorHandling,
+      customVariables: {}
+    };
+    
+    // Interactive mode
+    if (options.interactive) {
+      const answers = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'naming',
+          message: 'Choose naming convention:',
+          choices: ['camelCase', 'snake_case', 'kebab-case', 'PascalCase'],
+          default: 'camelCase'
+        },
+        {
+          type: 'list',
+          name: 'errorHandling',
+          message: 'Choose error handling style:',
+          choices: ['try-catch', 'promises', 'async-await'],
+          default: 'async-await'
         }
+      ]);
+      
+      adaptOptions = { ...adaptOptions, ...answers };
+      
+      // Ask about custom variables
+      if (pattern.customization.variables.length > 0) {
+        console.log(chalk.bold('\n📝 Custom Configuration:\n'));
         
-        results.forEach((result, index) => {
-          console.log(`  ${index + 1}. ${result.component.metadata.name}`);
-          console.log(`     Score: ${result.score.toFixed(3)}`);
-          console.log(`     Reason: ${result.reasoning}`);
-          console.log(`     Description: ${result.component.metadata.description}`);
-        });
-      } catch (error) {
-        console.error(`  Error searching: ${error}`);
+        for (const variable of pattern.customization.variables) {
+          const answer = await inquirer.prompt([
+            {
+              type: 'input',
+              name: 'value',
+              message: `${variable.name} (${variable.description}):`,
+              default: variable.defaultValue
+            }
+          ]);
+          
+          if (answer.value && answer.value !== variable.defaultValue) {
+            adaptOptions.customVariables[variable.name] = answer.value;
+          }
+        }
       }
     }
     
-    // Test adaptation functionality
-    console.log('\n--- Testing Adaptation ---');
+    // Adapt the pattern
+    console.log('Adapting pattern...');
     
     try {
-      // Get the first component for adaptation
-      const searchResults = await engine.search('Google OAuth', undefined, 1);
+      const result = await engine.adapt(pattern, adaptOptions);
       
-      if (searchResults.length > 0) {
-        const firstResult = searchResults[0];
-        if (!firstResult) {
-          console.log('No valid search result found');
-          return;
-        }
-        
-        const componentId = firstResult.component.metadata.id;
-        console.log(`\nAdapting component: ${firstResult.component.metadata.name}`);
-        
-        // Create a sample user context
-        const userContext = {
-          project: {
-            language: 'typescript',
-            framework: 'react',
-            packageManager: 'bun' as const,
-            conventions: {
-              naming: 'camelCase' as const,
-              imports: 'named' as const,
-              exports: 'named' as const,
-            },
-          },
-          dependencies: {
-            'react': '^18.0.0',
-            'typescript': '^5.0.0',
-          },
-          preferences: {
-            style: 'functional' as const,
-            errorHandling: 'exceptions' as const,
-            asyncPattern: 'async-await' as const,
-          },
-        };
-        
-        const adapted = await engine.adaptComponent(
-          componentId,
-          userContext,
-          { clientId: 'your-google-client-id' }
-        );
-        
-        console.log('\nAdaptation successful!');
-        console.log(`Generated ${adapted.adapted.files.length} files:`);
-        
-        adapted.adapted.files.forEach(file => {
-          console.log(`  - ${file.path}: ${file.description}`);
-        });
-        
-        console.log('\nInstall instructions:');
-        adapted.adapted.instructions.install.forEach(cmd => {
-          console.log(`  $ ${cmd}`);
-        });
-        
-        console.log('\nSetup instructions:');
-        adapted.adapted.instructions.setup.forEach(step => {
-          console.log(`  - ${step}`);
-        });
-        
-        console.log('\nUsage:');
-        console.log(adapted.adapted.instructions.usage);
-        
-        console.log('\nAttribution:');
-        console.log(adapted.adapted.attribution);
-        
-      } else {
-        console.log('No components found for adaptation test');
-      }
+      // Write the file
+      const outputPath = path.resolve(options.output);
+      await fs.mkdir(path.dirname(outputPath), { recursive: true });
+      await fs.writeFile(outputPath, result.code);
+      
+      console.log(chalk.green('✓ Pattern adapted successfully!'));
+      
+      console.log(chalk.bold('\n✅ Success!\n'));
+      console.log(`File created: ${chalk.green(outputPath)}`);
+      
+      console.log(chalk.bold('\n📋 Next Steps:\n'));
+      result.instructions.forEach((instruction, i) => {
+        console.log(`${i + 1}. ${instruction}`);
+      });
+      
+      // Show example usage
+      console.log(chalk.bold('\n💡 Example Usage:\n'));
+      console.log(chalk.gray('```typescript'));
+      console.log(`import { setupAuthRoutes } from '${options.output}';`);
+      console.log(`import express from 'express';`);
+      console.log(`\nconst app = express();`);
+      console.log(`setupAuthRoutes(app);`);
+      console.log(chalk.gray('```'));
+      
     } catch (error) {
-      console.error(`Error during adaptation: ${error}`);
+      console.error(chalk.red('✗ Failed to adapt pattern'));
+      console.error(chalk.red('Error:'), error);
+      process.exit(1);
     }
-    
-    console.log('\n✅ Discovery Engine demo completed successfully!');
-    
-  } catch (error) {
-    console.error('❌ Error running discovery engine:', error);
-    process.exit(1);
-  }
-}
+  });
 
-// Run the CLI
-main().catch(error => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
+// Quick start command
+program
+  .command('create <type> <name>')
+  .description('Create a new application from blueprints (coming soon)')
+  .action((type, name) => {
+    console.log(chalk.yellow('\n🚧 Application blueprints coming soon!\n'));
+    console.log('This will allow you to create full applications like:');
+    console.log('  - rainmaker create saas-app my-startup');
+    console.log('  - rainmaker create marketplace my-platform');
+    console.log('  - rainmaker create ai-app my-assistant');
+    console.log('\nFor now, use "rainmaker adapt" to add individual patterns.');
+  });
+
+// Add pattern to existing project
+program
+  .command('add <pattern>')
+  .description('Add a pattern to your existing project (coming soon)')
+  .action((pattern) => {
+    console.log(chalk.yellow('\n🚧 Project integration coming soon!\n'));
+    console.log('This will analyze your existing project and seamlessly integrate patterns.');
+    console.log('\nFor now, use "rainmaker adapt" and manually integrate the output.');
+  });
+
+program.parse();
+
+// Show help if no command provided
+if (!process.argv.slice(2).length) {
+  console.log(chalk.bold('\n🚀 Rainmaker Discovery - Build Faster, Build Better\n'));
+  console.log('The fastest way to build production-ready applications from proven patterns.\n');
+  program.outputHelp();
+  console.log(chalk.dim('\nExamples:'));
+  console.log(chalk.dim('  $ rainmaker list                    # See all patterns'));
+  console.log(chalk.dim('  $ rainmaker search auth             # Find authentication patterns'));
+  console.log(chalk.dim('  $ rainmaker adapt auth-jwt-express  # Use a pattern'));
+}

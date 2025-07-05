@@ -1,16 +1,16 @@
-# Rainmaker Discovery Engine
+# 🚀 Rainmaker Discovery
 
-The core semantic search and code adaptation engine for finding and transforming proven code components.
+**Build production-ready applications from proven patterns in seconds.**
 
-## Overview
+Rainmaker Discovery is a revolutionary tool that lets you compose applications from battle-tested, production-proven code patterns instead of generating new code from scratch. Think of it as "npm for application patterns" - each pattern is a complete, working implementation that you can adapt to your specific needs.
 
-The Discovery package provides:
-- **Semantic Search**: Find code components using natural language queries
-- **GitHub Indexing**: Crawl and index high-quality repositories
-- **Code Analysis**: Understand code patterns, frameworks, and dependencies
-- **Socratic Dialogue**: Guide users through requirement refinement
-- **Code Adaptation**: Transform code to match project conventions
-- **LLM Integration**: Enhanced analysis with AI-powered insights
+## Why Rainmaker?
+
+- **Proven Code**: Every pattern comes from real production systems, not AI hallucinations
+- **Instant Adaptation**: Transform patterns to match your coding style in seconds
+- **Composable**: Patterns are designed to work together seamlessly
+- **Type-Safe**: Full TypeScript support with comprehensive type definitions
+- **Zero Magic**: See exactly what code you're getting - no black boxes
 
 ## Quick Start
 
@@ -19,160 +19,148 @@ The Discovery package provides:
 cd packages/discovery
 bun install
 
-# Run the simple CLI demo
-bun run src/simple-cli.ts
+# Run the CLI
+bun run cli
 
-# Test GitHub indexing (requires GITHUB_TOKEN)
-bun run src/github-cli.ts
-
-# Test enhanced features (requires API keys)
-bun run src/test-enhanced-discovery.ts
+# Or use directly
+bun run src/cli.ts
 ```
 
-## Architecture
+## Available Commands
 
-```
-src/
-├── core/
-│   └── discovery-engine.ts      # Main orchestrator
-├── services/
-│   ├── code-analyzer.ts         # AST analysis & pattern detection
-│   ├── embedding-service.ts     # OpenAI embeddings
-│   ├── github-indexer.ts        # Repository crawler
-│   ├── socratic-dialogue.ts     # Requirement refinement
-│   └── adaptation-engine.ts     # Code transformation
-├── types/                       # TypeScript types
-└── baml_client/                 # Generated BAML client
-```
-
-## Key Features
-
-### 1. Semantic Search
-Uses OpenAI embeddings to find components by meaning, not just keywords:
-```typescript
-const results = await engine.search("user authentication with Google OAuth");
-// Returns components ranked by semantic similarity
-```
-
-### 2. GitHub Indexing
-Crawls repositories to find high-quality components:
-```typescript
-await engine.indexFromGitHub({
-  category: 'auth',
-  minStars: 100,
-  languages: ['typescript', 'javascript']
-});
-```
-
-### 3. Code Analysis
-Understands code structure using Babel AST:
-- Detects frameworks (React, Vue, Express, etc.)
-- Identifies patterns (auth, payments, async)
-- Extracts dependencies and APIs
-- Generates component metadata
-
-### 4. Socratic Dialogue
-Guides users through requirement refinement:
-```typescript
-const dialogue = new SocraticDialogue();
-const questions = await dialogue.generateQuestions(query, context);
-// Dynamic questions based on user needs
-```
-
-### 5. Code Adaptation
-Transforms code to match your project:
-- **Naming Conventions**: camelCase ↔ snake_case ↔ kebab-case
-- **Import Styles**: default ↔ named ↔ namespace
-- **Error Handling**: try-catch ↔ promises ↔ async/await ↔ Result types
-- **Code Injection**: Add custom logic at specific points
-
-### 6. LLM Integration (BoundaryML)
-Enhanced analysis with AI:
-- Component descriptions
-- Pattern recognition
-- Quality assessment
-- Transformation suggestions
-
-## Configuration
-
-### Environment Variables
+### List all patterns
 ```bash
-# Required for GitHub indexing
-GITHUB_TOKEN=your_github_token
-
-# Optional - enables LLM features
-OPENAI_API_KEY=your_openai_key
-ANTHROPIC_API_KEY=your_anthropic_key
+rainmaker list
 ```
 
-### Graceful Degradation
-All features work without LLM API keys:
-- Falls back to static analysis
-- Uses rule-based patterns
-- Maintains core functionality
-
-## Usage Examples
-
-### Basic Search
-```typescript
-import { DiscoveryEngine } from './core/discovery-engine';
-
-const engine = new DiscoveryEngine();
-const results = await engine.search('payment processing');
+### Search for patterns
+```bash
+rainmaker search auth
+rainmaker search payment
 ```
 
-### With Adaptation
-```typescript
-const adapted = await engine.adaptComponent(component, {
-  namingConvention: 'snake_case',
-  importStyle: 'named',
-  errorHandling: 'async-await',
-  customizations: {
-    apiEndpoint: 'https://api.myapp.com'
-  }
-});
+### Show pattern details
+```bash
+rainmaker show auth-jwt-express
 ```
 
-### Enhanced with LLM
-```typescript
-import { createEnhancedDiscoveryService } from './services/discovery-service-enhanced';
+### Adapt a pattern to your project
+```bash
+# Basic usage
+rainmaker adapt auth-jwt-express -o ./src/auth.ts
 
-const discovery = createEnhancedDiscoveryService({
-  githubToken: process.env.GITHUB_TOKEN,
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY,
-  qualityThresholds: {
-    minOverallScore: 7,
-    minCodeQuality: 6
-  }
-});
+# With options
+rainmaker adapt auth-jwt-express \
+  --naming camelCase \
+  --error-handling async-await \
+  --output ./src/auth.ts
+
+# Interactive mode
+rainmaker adapt auth-jwt-express -i
 ```
 
-## Testing
+## Current Patterns
+
+### Authentication
+- `auth-jwt-express` - JWT authentication with refresh tokens for Express
+
+### Payments
+- `payment-stripe` - Complete Stripe integration with checkout and subscriptions
+
+### More patterns coming soon!
+- `storage-s3` - S3 file upload with presigned URLs
+- `cache-redis` - Redis caching layer with TTL
+- `queue-bull` - Background job processing
+- `email-sendgrid` - Transactional email sending
+- `search-elasticsearch` - Full-text search
+- `websocket-socketio` - Real-time connections
+- `rate-limit-express` - API rate limiting
+- `oauth-google` - Google OAuth flow
+
+## How It Works
+
+1. **Choose a Pattern**: Browse our curated library of production-tested patterns
+2. **Customize**: Adapt the pattern to your coding style and requirements
+3. **Integrate**: Drop the generated code into your project
+4. **Ship**: You just saved hours of development time
+
+## Pattern Adaptation
+
+Rainmaker can adapt patterns to match your project's conventions:
+
+### Naming Conventions
+- `camelCase` (default)
+- `snake_case`
+- `kebab-case`
+- `PascalCase`
+
+### Error Handling Styles
+- `async-await` (default)
+- `try-catch`
+- `promises`
+
+### Custom Variables
+Each pattern exposes configuration variables you can customize during adaptation.
+
+## Example: Adding JWT Auth to Your App
 
 ```bash
-# Run all tests
-bun test
+# 1. See what's available
+rainmaker show auth-jwt-express
 
-# Test specific features
-bun run src/test-socratic-dialogue.ts
-bun run src/test-github-indexer.ts
-bun run src/test-baml.ts
+# 2. Adapt it to your style
+rainmaker adapt auth-jwt-express -i
+
+# 3. Follow the interactive prompts
+# - Choose naming convention
+# - Set token expiry times
+# - Configure other options
+
+# 4. Integrate the generated code
+# The CLI will show you exactly how to use it
 ```
 
-## Performance
+## The Vision
 
-- **Caching**: Components cached to disk for fast retrieval
-- **Batch Processing**: Embeddings generated in batches
-- **Lazy Loading**: LLM features loaded on demand
-- **Rate Limiting**: Respects GitHub API limits
+Today, Rainmaker helps you add individual patterns to your project. Tomorrow, it will compose entire applications:
+
+```bash
+# Coming soon!
+rainmaker create saas-app my-startup \
+  --auth clerk \
+  --payments stripe \
+  --database postgres \
+  --hosting vercel
+```
+
+This will generate a complete, production-ready SaaS application with:
+- Authentication flows
+- Subscription billing
+- Admin dashboard
+- API with rate limiting
+- Responsive UI
+- Deployment configuration
+
+All from proven patterns that work together seamlessly.
 
 ## Contributing
 
-1. Follow the existing code patterns
-2. Add tests for new features
-3. Ensure graceful degradation without API keys
-4. Update this README with new capabilities
+Want to add your own patterns? We'd love to have them! Each pattern should be:
+- Production-tested
+- Well-documented
+- Configurable
+- Framework-agnostic (where possible)
+
+## Philosophy
+
+> "The best code is code you don't have to write. The second best is code someone else already debugged."
+
+Rainmaker embraces this truth. Instead of generating code that might work, we give you code that definitely works - because it's already running in production somewhere.
 
 ## License
 
 MIT
+
+---
+
+Built with ❤️ by developers who are tired of reimplementing the same patterns over and over.
