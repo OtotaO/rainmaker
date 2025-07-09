@@ -1,15 +1,45 @@
 version: '3.8'
+
 services:
   postgres:
-    image: postgres:latest
-    ports:
-      - "54322:5432"
+    image: postgres:15
+    container_name: rainmaker-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_DB: rainmaker
+    ports:
+      - "54325:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  discovery:
+    build:
+      context: packages/discovery
+      dockerfile: Dockerfile
+    container_name: rainmaker-discovery
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/rainmaker?schema=public
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./packages/discovery:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "bunx prisma migrate deploy && 
+             bun run dev"
 
 volumes:
-  pgdata:
+  postgres_data:
