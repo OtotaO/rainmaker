@@ -37,10 +37,23 @@ bun install
 
 # Run the discovery engine demo
 cd packages/discovery
-bun run src/simple-cli.ts
+bun run demo
+```
 
-# Or run development servers (work in progress)
-bun run dev
+## 🐋 Running with Docker
+
+```bash
+# Start the database and discovery service
+docker-compose up -d
+
+# View discovery service logs
+docker logs rainmaker-discovery -f
+
+# Access service API
+curl http://localhost:3001/api/discovery/health
+
+# Stop services
+docker-compose down
 ```
 
 ## Current Implementation Status

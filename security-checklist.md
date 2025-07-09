@@ -47,6 +47,15 @@ This checklist covers essential security measures for the Rainmaker application 
 
 ## Infrastructure Security
 
+## Container Security
+- Use trusted base images (e.g., official Node.js images)
+- Scan images for vulnerabilities before deployment
+- Run containers as non-root user
+- Limit container capabilities (--cap-drop ALL)
+- Set resource limits (CPU/memory)
+- Use read-only filesystems where possible
+- Regularly update base images
+
 - [ ] **Turn on Web Application Firewall (WAF) Protection**
   - For Vercel deployments, enable WAF (Attack Challenge) on all routes
   - Configure appropriate security rules
@@ -90,4 +99,4 @@ This checklist covers essential security measures for the Rainmaker application 
 - [ ] Verify RLS policies are enabled and functioning
 - [ ] Test API endpoints for proper authentication
 - [ ] Ensure rate limiting is properly configured
-- [ ] Verify WAF is enabled on production deployments 
+- [ ] Verify WAF is enabled on production deployments

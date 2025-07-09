@@ -52,6 +52,19 @@ bun run cli adapt auth-jwt-express --output ./auth.ts
 bun run cli adapt auth-jwt-express -i
 ```
 
+## 🐋 Running with Docker
+
+```bash
+# Start the database and discovery service
+docker-compose up -d
+
+# View discovery service logs
+docker logs rainmaker-discovery -f
+
+# Stop services
+docker-compose down
+```
+
 **What you get:**
 - ✅ Complete JWT implementation with refresh tokens
 - ✅ Password hashing with bcrypt
