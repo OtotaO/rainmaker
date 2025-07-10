@@ -21,7 +21,7 @@
     "@babel/types": "^7.24.0",
     "@boundaryml/baml": "0.200.0",
     "@octokit/rest": "^20.0.2",
-    "@prisma/client": "^5.11.0",
+    "@prisma/client": "6.4.1",
     "@ts-rest/core": "^3.30.0",
     "@ts-rest/express": "^3.30.0",
     "@typescript-eslint/parser": "^7.3.0",

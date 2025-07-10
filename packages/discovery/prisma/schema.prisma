@@ -1,4 +1,5 @@
-// prisma/schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -66,52 +67,4 @@ model ApiContract {
   component    Component @relation(fields: [componentId], references: [id])
   
   @@unique([componentId, version])
-}
-
-// --- End Self-Writing Components Models ---
-
-model ProductHighLevelDescription {
-  id String @id @default(uuid())
-  name String
-  description String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model LearningJournalEntry {
-  id                                     String              @id @default(uuid())
-  timestamp                              DateTime @default(now())
-  userAction                             String
-  details                                String
-  selfReflectionOnCurrentDetails         String
-  globalSelfReflectionOnEntireJournalSoFar String
-  plannedAdjustments                     PlannedAdjustment[]
-}
-
-model PlannedAdjustment {
-  id                     String              @id @default(uuid())
-  reasoningForAdjustment String
-  adjustmentDescription  String
-  learningJournalEntry   LearningJournalEntry @relation(fields: [learningJournalEntryId], references: [id])
-  learningJournalEntryId String
-}
-
-model AIAssistanceLevel {
-  id          String @id @default(uuid())
-  level       Int
-  explanation String
-}
-
-model ConfigSetting {
-  id           String    @id @default(uuid())
-  key          String    @unique
-  value        String    // Stores JSON stringified value for non-string types
-  description  String?
-  category     String?
-  isEncrypted  Boolean   @default(false)
-  lastModified DateTime  @default(now()) @updatedAt
-  version      Int       @default(1)
-
-  @@index([key])
-  @@index([category])
 }
